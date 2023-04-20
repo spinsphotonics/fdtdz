@@ -16,4 +16,4 @@ All of this is not only open-sourced and permissively licensed,
 but you can easily try it for yourself (link coming), even if you don't have your own GPU!
 
 
-- [![Join the chat at https://gitter.im/fdtdz/community](https://badges.gitter.im/fdtdz/community.svg)](https://gitter.im/fdtdz/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+- [![Join the chat at https://gitter.im/fdtdz/community](https://badges.gitter.im/fdtdz/community.svg)]([https://gitter.im/fdtdz/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge](https://app.gitter.im/#/room/#fdtdz:gitter.im))
