@@ -1,0 +1,73 @@
+\begin{pspicture}(-1.5,-1.5)(10.75,13)
+  \input{fig/2d-helpers.tex}
+
+  \put(0,-0.25){
+    \psdiamond(6,4)(2,2)
+    \multiput(0,0)(1.5,0){3}{\vbuf84\ubuf84}
+    \multiput(-0.25,10.75)(1.5,0){8}{\ubuf00}
+    \multiput(0.5,8.5)(1.5,0){8}{\ubuf00}
+    \multiput(-0.25,6.25)(1.5,0){8}{\ubuf00}
+    \multiput(0,0)(-1.5,0){4}{\vbuf{4.25}{6.25}\ubuf51}
+    \multiput(1.25,-1.15)(1.5,0){7}{\ubuf00}
+
+    % Numbers.
+    \put(0,-0.145){
+      \rput[B](6,4){$t = 0$}
+      \multiput(0,0)(-2.25,2.25){3}{
+        \rput[B](7.5,5.5){0}
+        \rput[B](9,5.5){1}
+        \rput[B](10.5,5.5){2}
+      }
+
+      \rput[B](7.5,10){3}
+      \rput[B](9,10){4}
+      \rput[B](1.5,10){-1}
+      \rput[B](3.75,7.75){-1}
+      \rput[B](2.25,7.75){-2}
+      \rput[B](0.75,7.75){-3}
+
+      \put(0.125,0.125){
+        \rput[B](4,5){-1}
+        \rput[B](2.5,5){-2}
+        \rput[B](1,5){-3}
+      }
+
+      \put(-0.125,-0.125){
+        \rput[B](8,3){0}
+        \rput[B](9.5,3){1}
+      }
+
+      \rput[B](4.5,2.5){-1}
+      \rput[B](3,2.5){-2}
+      \rput[B](1.5,2.5){-3}
+
+
+      % \rput[B](0.75,0.25){-5}
+      % \rput[B](2.25,0.25){-4}
+      % \rput[B](3.75,0.25){-3}
+      % \rput[B](5.25,0.25){-2}
+      % \rput[B](6.75,0.25){-1}
+      % \rput[B](8.25,0.25){0}
+      % \rput[B](9.75,0.25){1}
+    }
+
+    {
+      \psset{linewidth=1.5pt,linestyle=dashed}
+      \psline{-}(8,4)(9.75,4)\psline{->}(0,6.25)(4.5,6.25)
+    }
+  }
+
+  % Cover up stuff outside of simulation domain, because `psclip` doesn't work.
+  \psframe[fillstyle=solid,linearc=0,linecolor=white,fillcolor=white](-2,-2)(0,14)
+  \psframe[fillstyle=solid,linearc=0,linecolor=white,fillcolor=white](-2,12)(13,14)
+  \psframe[fillstyle=solid,linearc=0,linecolor=white,fillcolor=white](9.75,-2)(13,14)
+  \psframe[fillstyle=solid,linearc=0,linecolor=white,fillcolor=white](-2,-2)(13,0)
+
+
+  % Simulation domain.
+  \psframe[linearc=0](0,0)(9.75,12)
+
+	\Yaxis{-1}0{12}\Xaxis0{9.75}{-1}  % Axes.
+\end{pspicture}
+
+

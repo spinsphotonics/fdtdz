@@ -1,0 +1,47 @@
+\begin{pspicture}(0,-0.5)(11,10)
+  \input{fig/2d-helpers.tex}
+	% Weird shape denoting E-field values that need to be loaded.
+	\pspolygon[linestyle=dashed,linecolor=lightgray]
+						(5.5,2)(8.5,5)(5.5,8)(6.5,9)(10.5,5)(6.5,1)
+	% Shape denoting H-field values that need to be written.
+	\pspolygon[linestyle=dotted,linecolor=black]
+						(5.5,1.1)(6.4,2)(3.4,5)(6.4,8)(5.5,8.9)(1.6,5)
+  % Hx and Hz dependencies.
+	\multiput(1,0)(2,0){2}{
+		\multiput(0,4)(2,2){2}{
+			\multiput(0,0)(2,-2){2}{%
+				\hn11z{hz} \hn21x{hx}
+		 		\psset{linecolor=lightgray,fillcolor=lightgray}
+				\En01y{ey-} \En21y{ey+} \En10x{ex-} \En12x{ex+} \En20z{ez-} \En22z{ez+}
+				\A{ey-}{hz} \A{ey+}{hz}
+				\A{ex-}{hz} \A{ex+}{hz}
+				\A{ez-}{hx} \A{ez+}{hx}
+			}
+		}
+	}
+  % Hy dependencies.
+	\multiput(3,0)(2,2){2}{
+		\multiput(0,6)(2,-2){2}{
+			\multiput(0,0)(0,-2){2}{%
+				\hn10y{hy}
+		 		\psset{linecolor=lightgray,fillcolor=lightgray}
+				\En00z{ez-} \En20z{ez+}
+				\A{ez-}{hy} \A{ez+}{hy}
+			}
+		}
+	}
+	% Redraw black circles black circles for clarity.
+	\multiput(1,0)(2,0){2}{
+		\multiput(0,4)(2,2){2}{
+			\multiput(0,0)(2,-2){2}{%
+				\hn11z{hz} \hn21x{hx}  
+			}
+		}
+	}
+	% Diamond.
+	\pspolygon[linestyle=dashed]
+						(5.5,1)(9.5,5)(5.5,9)(1.5,5)
+  \psframe[linestyle=dotted,linewidth=1pt,linearc=10pt](4.64,3.64)(6.36,5.36)
+	\Yaxis019\Xaxis1{10}0  % Axes.
+\end{pspicture}
+

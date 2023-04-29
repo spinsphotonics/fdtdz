@@ -1,0 +1,19 @@
+\begin{pspicture}(0,-0.5)(10,7)
+  \input{fig/1d-helpers.tex}
+	% Repeated "diamond" structures.
+	\psset{linecolor=lightgray,fillcolor=lightgray}
+	\multiput(1,0)(2,0){4}{
+		\multiput(0,1)(0,2){2}{%
+			\Eup00\Eup20\Hup11
+			\Eright00\Eright02\Hright11
+			\Eleft20\Eleft22\Hleft11
+		}
+	}
+	\psset{linecolor=black,fillcolor=black}
+	% Darker, central diamond.
+	\Hright44\Hleft64\Eup53  
+	% "E" and "H" markers.
+	\uput[r](5,5){$E$}\uput[r](6,4){$H$}  
+  % Axes.
+	\Taxis016 \Xaxis190
+\end{pspicture}

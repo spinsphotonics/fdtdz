@@ -1,0 +1,39 @@
+\begin{pspicture}(-1,-0.5)(11,9)
+  \input{fig/2d-helpers.tex}
+  % TM grid.
+	\put(1,1){
+		\uput[d](2,5){TM}
+		\multiput(0,0)(2,0){2}{
+			\multiput(0,0)(0,2){2}{
+				\hn11z{hz}
+				\en10x{ex-} \C{ex-}{hz}
+				\en12x{ex+} \C{ex+}{hz}
+				\en01y{ey-} \C{ey-}{hz}
+				\en21y{ey+} \C{ey+}{hz}
+			}
+		}
+	}
+  % TE grid.
+	\put(7,1){
+		\uput[d](2,5){TE}
+		\multiput(0,0)(2,0){2}{
+			\multiput(0,0)(0,2){2}{
+				\en00z{ez00}
+				\en02z{ez02}
+				\en22z{ez22}
+				\en20z{ez20}
+				\hn10y{ey-}
+				\hn12y{ey+}
+				\hn01x{ex-}
+				\hn21x{ex+}
+				\C{ez00}{ey-} \C{ey-}{ez20} \C{ez20}{ex+} \C{ex+}{ez22}
+				\C{ez22}{ey+} \C{ey+}{ez02} \C{ez02}{ex-} \C{ex-}{ez00}
+			}
+		}
+	}
+  % Axes.
+	\put(0,0){
+		\psline{->}(0,0)(2,0) \uput[r](2,0){$x$}
+		\psline{->}(0,0)(0,2) \uput[u](0,2){$y$}
+	}
+\end{pspicture}

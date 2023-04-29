@@ -1,0 +1,72 @@
+\begin{pspicture}(0,-0.5)(12,12)
+  \input{fig/2d-helpers.tex}
+	\multiput(1,0)(2,0){5}{
+		\multiput(0,1)(0,2){5}{%
+			% E-field layer.
+		 \psset{linecolor=lightgray,fillcolor=lightgray}
+		 \En00x{ex00}
+		 \En02x{ex02}
+		 \En10z{ez10}
+		 \En12z{ez12}
+		 \En11y{ey11}
+		 \En20x{ex20}
+		 \En22x{ex22}
+     \E{ex00}{ez10} \E{ez10}{ex20}
+     \E{ex02}{ez12} \E{ez12}{ex22}
+     \E{ez10}{ey11} \E{ez12}{ey11}
+			% H-field layer.
+		 \psset{linecolor=black}
+			\hn00y{hy00} 
+			\hn02y{hy02} 
+			\hn20y{hy20} 
+			\hn22y{hy22} 
+			\hn01z{hz01} 
+			\hn21z{hz21} 
+			\hn11x{hx11} 
+      \E{hy00}{hz01} \E{hz01}{hy02}
+      \E{hy20}{hz21} \E{hz21}{hy22}
+      \E{hz01}{hx11} \E{hx11}{hz21}
+		}
+	}
+	% Diamonds.
+	\pspolygon[linestyle=dashed]
+						(6.5,2)(10.5,6)(6.5,10)(2.5,6)
+	\pspolygon[linecolor=lightgray,linestyle=dashed]
+					  (5.5,2)(9.5,6)(5.5,10)(1.5,6)
+  \psframe[linestyle=dotted,linewidth=1pt,linearc=10pt](5.64,4.64)(7.36,6.36)
+	\Yaxis01{11}\Xaxis1{11}0  % Axes.
+\end{pspicture}
+
+
+% \begin{pspicture}(0,-0.5)(12,12)
+%   \input{fig/2d-helpers.tex}
+% 	\multiput(1,0)(2,0){5}{
+% 		\multiput(0,1)(0,2){5}{%
+% 			% E-field layer.
+% 		 \psset{linecolor=lightgray,fillcolor=lightgray}
+% 		 \En00z{ez00}
+% 		 \En02z{ez02}
+% 		 \En22z{ez22}
+% 		 \En20z{ez20}
+% 		 \En01y{ey01}
+% 		 \En21y{ey21}
+% 		 \En10x{ex10}
+% 		 \En12x{ex12}
+% 		 \E{ez00}{ey01} \E{ey01}{ez02} \E{ez02}{ex12} \E{ex12}{ez22}
+% 		 \E{ez22}{ey21} \E{ey21}{ez20} \E{ez20}{ex10} \E{ex10}{ez00}
+% 			% H-field layer.
+% 		 \psset{linecolor=black}
+% 			\hn11z{hz} 
+% 			\hn10y{hy-} \E{hy-}{hz}
+% 			\hn12y{hy+} \E{hy+}{hz}
+% 			\hn01x{hx-} \E{hx-}{hz}
+% 			\hn21x{hx+} \E{hx+}{hz}
+% 		}
+% 	}
+% 	% Diamonds.
+% 	\pspolygon[linestyle=dashed]
+% 						(5.5,2)(9.5,6)(5.5,10)(1.5,6)
+% 	\pspolygon[linecolor=lightgray,linestyle=dashed]
+% 					  (4.5,2)(8.5,6)(4.5,10)(0.5,6)
+% 	\Yaxis01{11}\Xaxis1{11}0  % Axes.
+% \end{pspicture}

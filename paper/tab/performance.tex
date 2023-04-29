@@ -1,0 +1,13 @@
+\begin{tabular}{r c c c c c}
+	  & arithmetic & register & shared & L2 & global \\
+  \hline
+  FDTD update        &  960 & 128 &  -- &  -- & -- \\
+  field buffer       &   -- &  -- & 240 & 120 & 24 \\
+  material buffer    &   -- &  -- & 120 &  30 &  6 \\
+  absorption profile &   -- &  96 &  -- &  -- &  4 \\ 
+  source profile     &   64 & 128 &  -- &  -- &  4 \\ 
+  PML update         &   64 & 256 &  -- &  -- & -- \\
+  \hline
+  total              & 1088 & 608 & 360 & 150 & 38 \\
+	  & operations & bytes & bytes & bytes & bytes \\
+\end{tabular}

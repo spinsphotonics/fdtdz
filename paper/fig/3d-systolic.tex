@@ -1,0 +1,40 @@
+\begin{pspicture}(-4.5,-4.5)(4.5,4.5)
+  \input{fig/2d-helpers.tex}
+
+  % \psset{linewidth=1.2pt,arrowsize=5pt}
+
+
+  {
+    \psset{linecolor=gray}
+    \psline{-}(-0.5,1.5)(0.5,1.5)     \psline{<-}(0,1.5)(0.5,1.5)
+    \psline{-}(-1,1)(1,1)     \psline{<-}(0,1)(1,1)
+    \psline{-}(-1.5,0.5)(1.5,0.5)     \psline{<-}(0,0.5)(1.5,0.5)
+    \psline{-}(-1.95,0)(1.95,0) \psline{<-}(0,0)(1.95,0)
+    \psline{-}(-1.5,-0.5)(1.5,-0.5)   \psline{<-}(0,-0.5)(1.5,-0.5)
+    \psline{-}(-1,-1)(1,-1)   \psline{<-}(0,-1)(1,-1)
+    \psline{-}(-0.5,-1.5)(0.5,-1.5)   \psline{<-}(0,-1.5)(0.5,-1.5)
+  }
+
+  {
+    \multiput(0.5,1.5)(0.5,-0.5){3}{\psline{-}(0,0)(1,1)\psline{<-}(0.5,0.5)(1,1)}
+    \multiput(-2.5,-1.5)(0.5,-0.5){3}{\psline{-}(0,0)(1,1)\psline{<-}(0.5,0.5)(1,1)}
+  }
+ 
+
+  {
+    \psset{linestyle=dashed}
+    \multiput(-1.5,0.5)(0.5,0.5){3}{\psline{<-}(-0.5,0.5)(0,0)}\psline{<-}(-2.45,0.5)(-1.95,0)
+    \multiput(1,-2)(0.5,0.5){3}{\psline{<-}(-0.5,0.5)(0,0)}\psline{<-}(1.95,0)(2.45,-0.5)
+  }
+
+  \psdiamond(0,0)(2,2)
+
+  \rput[b](2.3,2.2){$u$-buffer}
+  \rput[t](-2.3,-2.2){$u$-buffer}
+
+  \rput[b](-2.3,1.5){$v$-buffer}
+  \rput[t](2.3,-1.5){$v$-buffer}
+  
+	\Yaxis{-4}{-3}{3}\Xaxis{-3}{3}{-4}  % Axes.
+
+\end{pspicture}

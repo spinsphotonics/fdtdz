@@ -1,0 +1,25 @@
+\begin{pspicture}(0,-0.5)(12,12)
+  \input{fig/2d-helpers.tex}
+	% Triangles
+	\pspolygon*[linecolor=lightgray,fillcolor=lightgray]
+						 (5,2.5)(8.5,6)(5,9.5)(1.5,6)
+	\pspolygon[linecolor=black,linestyle=dashed]
+					  (6,2.5)(9.5,6)(6,9.5)(2.5,6)
+	% The TE grid.
+	\multiput(1,0)(2,0){5}{%
+		\multiput(0,1)(0,2){5}{%
+			\en00z{ez00}
+			\en02z{ez02}
+			\en22z{ez22}
+			\en20z{ez20}
+			\hn10y{ey-}
+			\hn12y{ey+}
+			\hn01x{ex-}
+			\hn21x{ex+}
+			\C{ez00}{ey-} \C{ey-}{ez20} \C{ez20}{ex+} \C{ex+}{ez22}
+			\C{ez22}{ey+} \C{ey+}{ez02} \C{ez02}{ex-} \C{ex-}{ez00}
+		}
+	}
+  % Axes.
+	\Yaxis01{11}\Xaxis1{11}0 
+\end{pspicture}

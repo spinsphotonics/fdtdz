@@ -1,0 +1,14 @@
+\begin{pspicture}(0,-.5)(11,7)
+	\input{fig/1d-helpers.tex}
+  \multiput(0,0)(2,2){2}{
+	  % Lassos.
+	  \psframe*[linecolor=lightgray,fillcolor=lightgray](1.6,2.6)(7.4,4.4)
+	  \pspolygon[linecolor=black,linestyle=dashed]
+              (6.6,2.4)(6.6,1.6)(8.4,1.6)(8.4,3.4)(7.6,3.4)(7.6,2.4)
+	  % Arrows and dots.
+    \multiput(1,1)(2,0){3}{\Eright01\Hup10\Eleft21}
+    \multiput(2,2)(2,0){3}{\Hright01\Eup10\Hleft21}
+  }
+  % Axes.
+  \Taxis016\Xaxis1{10}0
+\end{pspicture}

@@ -1,0 +1,31 @@
+% Nodes for E and H fields.
+\newcommand{\enode}[3]{\cnode*(#1,#2){2pt}{#3}}
+\newcommand{\hnode}[3]{\cnode(#1,#2){2pt}{#3}}
+
+% Shortcut for arrows.
+\newcommand{\A}[2]{\ncline[nodesep=4pt]{->}{#1}{#2}}
+
+% Two dots connected by an arrow.
+\newcommand{\connector}[6]{
+	\put(0,0){#1{#2}{#3}{A}}
+	\put(#5,#6){#4{#2}{#3}{B}}
+	\A{A}{B}
+}
+
+% Various combinations of dot-connector-dot combos that we need.
+\newcommand{\Eright}[2]{\connector{\enode}{#1}{#2}{\hnode}{1}{1}}
+\newcommand{\Hright}[2]{\connector{\hnode}{#1}{#2}{\enode}{1}{1}}
+\newcommand{\Eleft}[2]{\connector{\enode}{#1}{#2}{\hnode}{-1}{1}}
+\newcommand{\Hleft}[2]{\connector{\hnode}{#1}{#2}{\enode}{-1}{1}}
+\newcommand{\Eup}[2]{\connector{\enode}{#1}{#2}{\enode}{0}{2}}
+\newcommand{\Hup}[2]{\connector{\hnode}{#1}{#2}{\hnode}{0}{2}}
+\newcommand{\Ehalf}[2]{\connector{\enode}{#1}{#2}{\hnode}{0}{1}}
+\newcommand{\Hhalf}[2]{\connector{\hnode}{#1}{#2}{\enode}{0}{1}}
+
+% `x` and `t` axes.
+\newcommand{\Taxis}[3]{\psline{->}(#1,#2)(#1,#3)\uput[u](#1,#3){$t$}}
+\newcommand{\Yaxis}[3]{\psline{->}(#1,#2)(#1,#3)\uput[u](#1,#3){$y$}}
+\newcommand{\Xaxis}[3]{\psline{->}(#1,#3)(#2,#3)\uput[r](#2,#3){$x$}}
+
+% Rounded corners for `\psframe` and `\pspolygon`.
+\psset{linearc=0.2,cornersize=absolute}

@@ -1,0 +1,5 @@
+include README.md LICENSE *.toml src/fdtdz_jax/ptx/*.ptx 
+graft lib
+exclude .*
+prune .github
+

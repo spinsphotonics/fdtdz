@@ -1,0 +1,34 @@
+% Arrows.
+\newcommand{\A}[2]{\ncline[nodesep=4pt]{->}{#1}{#2}}
+\newcommand{\C}[2]{\ncline[nodesep=4pt]{<->}{#1}{#2}}
+\newcommand{\E}[2]{\ncline[nodesep=0pt]{-}{#1}{#2}}
+
+% H and E nodes.
+\newcommand{\hn}[4]{\put(0,0){\cnode(#1,#2){2pt}{#4}\uput{3pt}[dr](#1,#2){$_#3$}}}
+\newcommand{\en}[4]{\put(0,0){\cnode*(#1,#2){2pt}{#4}\uput{3pt}[dr](#1,#2){$_#3$}}}
+
+% Same as `\hn` and `\en`, except subscripts are to the right.
+\newcommand{\hnr}[4]{\put(0,0){\cnode(#1,#2){2pt}{#4}\uput{3pt}[l](#1,#2){$_#3$}}}
+\newcommand{\enr}[4]{\put(0,0){\cnode*(#1,#2){2pt}{#4}\uput{3pt}[l](#1,#2){$_#3$}}}
+
+% Same as `\hn` and `\en`, except with gray subscripts.
+\newcommand{\Hn}[4]{\put(0,0){\cnode(#1,#2){2pt}{#4}\uput{3pt}[dl](#1,#2){\textcolor{lightgray}{$_#3$}}}}
+\newcommand{\En}[4]{\put(0,0){\cnode*(#1,#2){2pt}{#4}\uput{3pt}[dl](#1,#2){\textcolor{lightgray}{$_#3$}}}}
+
+% H-field and E-field diamonds.
+\newcommand{\hdm}[2]{\put(#1,#2){\pspolygon[linestyle=dashed](0.5,-4)(4.5,0)(0.5,4)(-3.5,0)}}
+\newcommand{\edm}[2]{\put(#1,#2){\pspolygon[linecolor=lightgray,linestyle=dashed](0.5,-4)(4.5,0)(0.5,4)(-3.5,0)}}
+
+% U- and V-buffers.
+    
+\newcommand{\ubuf}[2]{\put(#1,#2){\pspolygon[fillstyle=solid,fillcolor=lightgray](0.25,0.25)(0.75,0.75)(-1.25,2.75)(-1.75,2.25)}}
+\newcommand{\vbuf}[2]{\put(#1,#2){\pspolygon[fillstyle=solid,fillcolor=lightgray](-1.75,-2.25)(-1.25,-2.75)(1.5,0)(1,0.5)}}
+
+% Axes.
+\newcommand{\Taxis}[3]{\psline{->}(#1,#2)(#1,#3)\uput[u](#1,#3){$t$}}
+\newcommand{\Yaxis}[3]{\psline{->}(#1,#2)(#1,#3)\uput[u](#1,#3){$y$}}
+\newcommand{\Xaxis}[3]{\psline{->}(#1,#3)(#2,#3)\uput[r](#2,#3){$x$}}
+
+% Default settings for `\psframe` and `\pspolygon`.
+\psset{linearc=0.2,cornersize=absolute}
+
