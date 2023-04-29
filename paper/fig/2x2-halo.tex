@@ -1,0 +1,19 @@
+\begin{pspicture}(0,-.5)(13,7)
+  \input{fig/1d-helpers.tex}
+	% Box around 2x2 cell.
+	\psframe*[linecolor=lightgray,fillcolor=lightgray]
+					(4.6,2.6)(8.4,6.4)
+	% Required Yee cells.
+	\multiput(0,0)(2,0){6}{
+		\Eright11
+		\psframe[linestyle=dashed](.6,.6)(2.4,2.4)
+	}
+	% Rest of dots and arrows.
+	\multiput(3,1)(2,0){5}{\Eleft00}
+	\multiput(2,1)(2,0){5}{\Hright01\Eup10\Hleft21}
+	\multiput(3,2)(2,0){4}{\Eright01\Hup10\Eleft21}
+	\multiput(4,3)(2,0){3}{\Hright01\Eup10\Hleft21}
+	\multiput(5,4)(2,0){2}{\Eright01\Hup10\Eleft21}
+	% Axes.
+	\Taxis016\Xaxis{1}{12}{0}  
+\end{pspicture}

@@ -1,0 +1,59 @@
+\begin{pspicture}(0,0)(10,16.5)
+	\input{fig/2d-helpers.tex}
+	\put(1,0){  % Gray zig-zag.
+		\pspolygon[linestyle=dashed,linecolor=lightgray]
+		(5,0.5)(7,0.5)          % Bottom.
+		(3.5,4)(7.5,8)(3.5,12)  % Right.
+		(8,16.5)(6,16.5)				% Top.
+		(1.5,12)(5.5,8)(1.5,4)  % Left.
+	}
+	\put(0,0){  % Black zig-zag.
+		\pspolygon[linestyle=dashed,linecolor=black]
+		(5,0.5)(7,0.5)          % Bottom.
+		(3.5,4)(7.5,8)(3.5,12)  % Right.
+		(8,16.5)(6,16.5)				% Top.
+		(1.5,12)(5.5,8)(1.5,4)  % Left.
+	}
+	\multiput(1,0)(2,0){4}{
+		\multiput(0,1)(0,2){7}{%
+			% E-field layer.
+			\psset{linecolor=lightgray,fillcolor=lightgray}
+			\En00z{ez00}
+			\En02z{ez02}
+			\En22z{ez22}
+			\En20z{ez20}
+			\En01y{ey01}
+			\En21y{ey21}
+			\En10x{ex10}
+			\En12x{ex12}
+			\E{ez00}{ey01} \E{ey01}{ez02} \E{ez02}{ex12} \E{ex12}{ez22}
+			\E{ez22}{ey21} \E{ey21}{ez20} \E{ez20}{ex10} \E{ex10}{ez00}
+			% H-field layer.
+			\psset{linecolor=black}
+			\hn11z{hz}
+			\hn10y{hy-} \E{hy-}{hz}
+			\hn12y{hy+} \E{hy+}{hz}
+			\hn01x{hx-} \E{hx-}{hz}
+			\hn21x{hx+} \E{hx+}{hz}
+		}
+	}
+	% Top-most half-layer of dots and lines..
+	\multiput(1,15)(2,0){4}{
+		% E-field layer.
+		\psset{linecolor=lightgray,fillcolor=lightgray}
+		\En00z{ez00}
+		\En20z{ez20}
+		\En01y{ey01}
+		\En21y{ey21}
+		\En10x{ex10}
+		\E{ez00}{ey01} \E{ey21}{ez20} \E{ez20}{ex10} \E{ex10}{ez00}
+		% H-field layer.
+		\psset{linecolor=black}
+		\hn11z{hz}
+		\hn10y{hy-} \E{hy-}{hz}
+		\hn01x{hx-} \E{hx-}{hz}
+		\hn21x{hx+} \E{hx+}{hz}
+
+	}
+	\Yaxis01{16}\Xaxis190  % Axes.
+\end{pspicture}

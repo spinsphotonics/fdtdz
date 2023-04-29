@@ -1,0 +1,62 @@
+\begin{pspicture}(0,-0.5)(10.5,10)
+	\input{fig/zig-helpers.tex}
+	
+	\Yaxis019\Xaxis1{9.5}0  % Axes.
+
+	% Leading and trailing ellipsis.
+	\rput(1,5){\dots}
+	\rput(9.5,5){\dots}
+
+	% Leading and trailing ribbons.
+	\put(0.5,0){ % Shift everythings by 0.5 in the x-diretion.
+
+		\multiput(1,1)(5,0){2}{
+			\multiput(0,0)(1,0){2}{
+				\pspolygon*[linecolor=lightgray]
+									 (0,0)(1,1)(0,2)(1,3)(0,4)(1,5)(0,6)(1,7)(0,8)
+									 (0.5,8)(1.5,7)(0.5,6)(1.5,5)(0.5,4)(1.5,3)(0.5,2)(1.5,1)(0.5,0)
+				\put(0.5,0){
+					\pspolygon*[linecolor=gray]
+										 (0,0)(1,1)(0,2)(1,3)(0,4)(1,5)(0,6)(1,7)(0,8)
+										 (0.5,8)(1.5,7)(0.5,6)(1.5,5)(0.5,4)(1.5,3)(0.5,2)(1.5,1)(0.5,0)
+				}
+			}
+		}
+
+		% Interstitial ribbons.
+		\put(4,1){
+			\pspolygon*[linecolor=lightgray]
+								 (1,0)(0,1)(1,2)(0,3)(1,4)(0,5)(1,6)(0,7)(1,8)
+								 (1.5,8)(0.5,7)(1.5,6)(0.5,5)(1.5,4)(0.5,3)(1.5,2)(0.5,1)(1.5,0)
+			\put(0.5,0){
+				\pspolygon*[linecolor=gray]
+									 (1,0)(0,1)(1,2)(0,3)(1,4)(0,5)(1,6)(0,7)(1,8)
+									 (1.5,8)(0.5,7)(1.5,6)(0.5,5)(1.5,4)(0.5,3)(1.5,2)(0.5,1)(1.5,0)
+			}
+		}
+
+		% Right column of diamonds.
+		\multiput(5,1)(0,2){4}{
+			\pspolygon[linecolor=darkgray]
+								 (1,0)(2,1)(1,2)(0,1)
+		}
+
+		% Left column of diamonds.
+		\put(3,1){
+			\pspolygon[linecolor=darkgray]
+								 (0.03,0.03)(1,1)(1.97,0.03)
+			\multiput(0,1)(0,2){3}{
+				\pspolygon[linecolor=darkgray]
+									 (1,0)(2,1)(1,2)(0,1)
+			}
+			\pspolygon[linecolor=darkgray]
+								 (0.03,7.97)(1,7)(1.97,7.97)
+		}
+
+		% All-white rectangle to disallow diamond outlines to cross over simulation
+		% domain "boundaries". Just a small detail.
+		\psframe*[linecolor=white](1,0.5)(9,1)
+		\psframe*[linecolor=white](1,9)(9,9.5)
+	}
+
+\end{pspicture}

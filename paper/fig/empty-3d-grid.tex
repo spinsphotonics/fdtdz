@@ -1,0 +1,32 @@
+\begin{pspicture}(0,-0.5)(12,12)
+  \input{fig/2d-helpers.tex}
+	\multiput(1,0)(2,0){5}{
+		\multiput(0,1)(0,2){5}{%
+			% E-field layer.
+		 \psset{linecolor=lightgray,fillcolor=lightgray}
+		 \En00z{ez00}
+		 \En02z{ez02}
+		 \En22z{ez22}
+		 \En20z{ez20}
+		 \En01y{ey01}
+		 \En21y{ey21}
+		 \En10x{ex10}
+		 \En12x{ex12}
+		 \E{ez00}{ey01} \E{ey01}{ez02} \E{ez02}{ex12} \E{ex12}{ez22}
+		 \E{ez22}{ey21} \E{ey21}{ez20} \E{ez20}{ex10} \E{ex10}{ez00}
+			% H-field layer.
+		 \psset{linecolor=black}
+			\hn11z{hz} 
+			\hn10y{hy-} \E{hy-}{hz}
+			\hn12y{hy+} \E{hy+}{hz}
+			\hn01x{hx-} \E{hx-}{hz}
+			\hn21x{hx+} \E{hx+}{hz}
+		}
+	}
+	% Diamonds.
+	% \pspolygon[linestyle=dashed]
+	% 					(5.5,2)(9.5,6)(5.5,10)(1.5,6)
+	% \pspolygon[linecolor=lightgray,linestyle=dashed]
+	% 				  (6.5,2)(10.5,6)(6.5,10)(2.5,6)
+	\Yaxis01{11}\Xaxis1{11}0  % Axes.
+\end{pspicture}

@@ -1,0 +1,42 @@
+\begin{pspicture}(0,-0.5)(11,10)
+  \input{fig/2d-helpers.tex}
+	% Gray shape denoting H-values that need to be loaded.
+	\pspolygon[linestyle=dashed,linecolor=lightgray]
+						(4,0.5)(8.5,5)(4,9.5)(6,9.5)(10.5,5)(6,0.5)
+	% E-field values at trailing edge which need to be written out.
+	\pspolygon[linestyle=dotted,linecolor=black]
+						(5.5,1.1)(6.4,2)(3.4,5)(6.4,8)(5.5,8.9)(1.6,5)
+  % Ex and Ey dependencies.
+	\multiput(1,0)(2,-2){2}{
+		\multiput(0,3)(2,2){2}{
+			\hn22z{hz00} \hn02z{hz-0} \hn42z{hz+0} \hn20z{hz0-} \hn24z{hz0+}
+			\hn12x{hx-} \hn32x{hx+} \hn21y{hy-} \hn23y{hy+}
+			\psset{linecolor=lightgray}
+			\En12y{ey-} \En32y{ey+} \En21x{ex-} \En23x{ex+}
+			\psset{linecolor=black}
+			\A{hz-0}{ey-} \A{hz00}{ey-} \A{hz00}{ey+} \A{hz+0}{ey+}
+			\A{hz0-}{ex-} \A{hz00}{ex-} \A{hz00}{ex+} \A{hz0+}{ex+}
+		}
+	}
+  % Hy dependencies.
+	\multiput(3,0)(0,-2){2}{
+		\multiput(0,5)(2,2){2}{
+			\multiput(0,0)(2,-2){2}{%
+				\hn01y{hy-} \hn21y{hy+} \hn10x{hx-} \hn12x{hx+}
+		 		\psset{linecolor=lightgray}
+				\En11z{ez}
+				\psset{linecolor=black}
+				\A{hy-}{ez} \A{hy+}{ez} \A{hx-}{ez} \A{hx+}{ez}
+			}
+		}
+	}
+	\hn25x{hx}  % Repaint an Hx value.
+	\hn{10}5x{hx}  % Additional Hx that needs to be loaded.
+	% Diamond.
+	\pspolygon[linestyle=dashed]
+						(5.5,1)(9.5,5)(5.5,9)(1.5,5)
+  \psframe[linestyle=dotted,linewidth=1pt,linearc=10pt](5.64,3.64)(7.36,5.36)
+  \psset{linecolor=black}
+	\Yaxis019\Xaxis1{10}0  % Axes.
+\end{pspicture}
+

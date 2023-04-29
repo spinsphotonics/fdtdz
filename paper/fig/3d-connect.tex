@@ -1,0 +1,42 @@
+\begin{pspicture}(-4.5,-0.5)(16,13)
+  \input{fig/2d-helpers.tex}
+
+	% Diamonds.
+  \hdm06% \edm{-1}6
+  % \hdm9{10}\edm{10}{10}
+  % \hdm92\edm{10}2
+
+  \hdm06 %\edm{-1}6
+  \psline[linestyle=dashed,linecolor=lightgray](-4,5.5)(-0.5,2)(3.5,6)(-0.5,10)(-4,6.5)
+
+  \psline[linestyle=dashed](7.5,0)(5.5,2)(9.5,6)(11,4.5)
+  \psline[linestyle=dashed,linecolor=lightgray](8.5,0)(6.5,2)(10.5,6)(11,5.5)
+
+  \psline[linestyle=dashed](7.5,12)(5.5,10)(9.5,6)(11,7.5)
+  \psline[linestyle=dashed,linecolor=lightgray](8.5,12)(6.5,10)(10.5,6)(11,6.5)
+
+  {
+    \psset{linecolor=lightgray,fillcolor=lightgray}
+ 	  \pspolygon[linestyle=dashed](2.5,10)(6.5,6)(7.5,7)(3.5,11) % u-buffer.
+ 	  \pspolygon[linestyle=dashed](3.5,1)(8.5,6)(7.5,7)(2.5,2)   % v-buffer.
+    \multiput(4,2)(2,2){2}{\En00y{00y}\En01z{01z}\En11x{11x}\E{00y}{01z}\E{01z}{11x}}
+    \En86y{86y}
+    \multiput(6,7)(-2,2){2}{\En00z{00z}\En01y{01y}\En10x{10x}\E{00z}{01y}\E{00z}{10x}}
+    \rput[br](3.5,11){\textcolor{lightgray} {$u$} }
+    \rput[tr](3.5,1){\textcolor{lightgray} {$v$} }
+  }
+
+  {
+	  \psset{linecolor=black}
+ 	  \pspolygon[linestyle=dashed](1.5,10)(5,6.5)(6,7.5)(2.5,11) % u-buffer.
+ 	  \pspolygon[linestyle=dashed](2.5,1)(7.5,6)(6.5,7)(1.5,2)   % v-buffer.
+    \multiput(2,2)(2,2){3}{\hn00x{00x}\hn10z{10z}\E{00x}{10z}}
+    \multiput(2,2)(2,2){2}{\hn10z{10z}\hn11y{11y}\E{10z}{11y}}
+    \multiput(4,7)(-2,2){2}{\hn11z{11z}\hn10y{10y}\hn01x{01x}\E{11z}{10y}\E{11z}{01x}}
+    \rput[br](2.5,11){$u$}
+    \rput[tr](2.5,1){$v$}
+  }
+
+	\Yaxis{-4}1{12}\Xaxis{-3}{11}0  % Axes.
+\end{pspicture}
+

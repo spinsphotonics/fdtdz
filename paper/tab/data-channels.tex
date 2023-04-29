@@ -1,0 +1,8 @@
+\begin{tabular}{c c c c c}
+	Data channel  & GB/s/thread & Size & Accessibility & Overhead \\
+  \hline
+	Register (shuffle) & 1.00  & up to 32 KB & 32 threads  & none \\
+	Shared memory      & 0.25  & 50-200 KB   & 256 threads & small \\
+	L2 cache           & 0.10  & 1-100 MB    & all threads & large \\
+	Global memory      & 0.025 & 10-100 GB   & all threads & large \\
+\end{tabular}

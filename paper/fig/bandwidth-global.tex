@@ -1,0 +1,76 @@
+\begin{pspicture}(0,-1)(9.6,6)
+
+	% Axis labels.
+	\uput[l]{90}(-1.0,3.6){Bandwidth (TB/s)}
+	\uput[d](4.8,-0.6){Spacing (KB)}
+
+	\psset{xunit=0.02cm,yunit=4}  % Rescale to fit the data.
+	\psaxes[Dx=64,Dy=0.25,tickstyle=top](512,1.5001)  % Axes.
+
+	% Plot the points as well as the lines.
+	\psset{showpoints=true}
+
+	% Write bandwidth.
+	\uput[u](256,0.696){\textcolor{lightgray}{write}}
+	\listplot[linecolor=lightgray]{
+		32      0.278
+		64      0.433
+		96      0.527
+		128     0.584
+		160     0.625
+		192     0.656
+		224     0.678
+		256     0.696
+		288     0.665
+		320     0.226
+		352     0.216
+		384     0.218
+		416     0.215
+		448     0.216
+		480     0.216
+		512     0.214
+	}
+
+	% Read bandwidth.
+	\uput[u](352,0.646){\textcolor{gray}{read}}
+	\listplot[linecolor=gray]{
+		32      0.212
+		64      0.339
+		96      0.420
+		128     0.478
+		160     0.521
+		192     0.550
+		224     0.578
+		256     0.594
+		288     0.616
+		320     0.633
+		352     0.646
+		384     0.411
+		416     0.270
+		448     0.261
+		480     0.259
+		512     0.260
+	}
+
+	% Read+write bandwidth.
+	\uput[u](288,1.197){\textcolor{black}{read-write}}
+	\listplot[linecolor=black]{
+		32      0.424
+		64      0.671
+		96      0.827
+		128     0.948
+		160     1.037
+		192     1.088
+		224     1.153
+		256     1.194
+		288     1.197
+		320     0.473
+		352     0.454
+		384     0.269
+		416     0.230
+		448     0.226
+		480     0.224
+		512     0.224
+	}
+
+\end{pspicture}

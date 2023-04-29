@@ -1,0 +1,20 @@
+\begin{pspicture}(0,-.5)(7,7)
+  \input{fig/1d-helpers.tex}
+	% Box around 2x2 cell.
+	\psframe*[linecolor=lightgray,fillcolor=lightgray]
+					(1.6,2.6)(5.4,6.4)
+	% Dots and arrows.
+	\multiput(1,0)(2,0){2}{
+		\multiput(0,1)(0,2){2}{
+			\Hright01\Eright12
+			\Hleft21\Eleft32
+			\Eup10\Hup21
+		}
+	}
+	% Dashed arrows.
+	\psset{linestyle=dashed}
+  \Eleft23\Hright54  
+	% Axes.
+	\psset{linestyle=solid}
+	\Taxis016\Xaxis160  
+\end{pspicture}

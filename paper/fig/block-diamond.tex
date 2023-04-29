@@ -1,0 +1,17 @@
+\begin{pspicture}(0,-0.5)(8,8)
+  \input{fig/1d-helpers.tex}
+	% Gray diamond.
+	\pspolygon*[linecolor=lightgray,fillcolor=lightgray]
+						 (4,2.45)(6.55,5)(4,7.55)(1.45,5)
+	% Arrows and dots.
+	\put(0,1){
+		\Eup40
+		\Hup31\Hright31\Hleft51\Hup51
+		\Eup22\Eright22\Eleft42\Eup42\Eright42\Eleft62\Eup62
+	}
+	\multiput(1,4)(2,0){3}{\Hright00\Hleft20}
+	\multiput(2,4)(2,0){2}{\Eright01\Hup10\Eleft21}
+	\put(3,5){\Hright01\Eup10\Hleft21}
+  % Axes.
+	\Taxis017\Xaxis170
+\end{pspicture}
