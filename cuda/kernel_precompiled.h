@@ -114,8 +114,6 @@ void LaunchCooperativePreCompiledKernel(PreCompiledKernelType type, void *args,
                                         size_t sharedbytes,
                                         cudaStream_t stream = CU_STREAM_LEGACY,
                                         std::string dirname = "../ptx") {
-  // TODO: Remove.
-  std::cout << "Kernel filename: " << type.FileName(dirname) << "\n";
   CUmodule mod;
   CUfunction fun;
   CURESULT(cuModuleLoad(&mod, type.FileName(dirname).c_str()));

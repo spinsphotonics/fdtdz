@@ -94,18 +94,16 @@ endmacro()
 # A100: 8.0
 #
 
-# kernelgen_single(kernel_32_75_0_111 75 float float 0 true true true __OMIT_HALF2__)
-
-# kern32gen_npml(37)
-# kern32gen_npml(60)
-# kern32gen_npml(70)
+kern32gen_npml(37)
+kern32gen_npml(60)
+kern32gen_npml(70)
 kern32gen_npml(75)
-# kern32gen_npml(80)
-# kern16gen_npml(60)
-# kern16gen_npml(70)
-# kern16gen_npml(75)
-# kern16gen_npml(80)
-# kerngen_bmark(75 7)
+kern32gen_npml(80)
+kern16gen_npml(60)
+kern16gen_npml(70)
+kern16gen_npml(75)
+kern16gen_npml(80)
+kerngen_bmark(75 7)
 
 
 include(GoogleTest)
