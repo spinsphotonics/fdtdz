@@ -24,6 +24,7 @@ At the moment [JAX](https://github.com/google/jax) fits the bill.
 
 Currently, *fdtd-z* only supports simple dielectric materials (not even absorption is supported) for performance reasons (see the [whitepaper](paper/paper.pdf) for the full story).
 In the systolic scheme that *fdtd-z* uses there are two many constraints that prevent us from modeling more complex materials:
+
 * bandwidth limitations: Additional coefficients used in the update equation need to be loaded, while additional auxiliary fields would both need to be loaded and written back to disk. FDTD is already a heavily bandwidth-limited algorithm and this would further decrease performance.
 * register pressure: CUDA threads are hard-limited to a maximum of 256 registers (reference needed), which are needed for fast access to E- and H-field values, as well as storing coefficients.
 The current implementation of *fdtd-z* already uses the maximum number of registers -- a fundamental change in the basic architecture of the systolic memory system (such as using shared memory instead of registers) would be needed to simulate dispersive materials and other more complex material systems.
@@ -31,4 +32,14 @@ The current implementation of *fdtd-z* already uses the maximum number of regist
 For dispersive materials, a simple work-around is to run individual single-frequency simulations at each wavelength of interest with the appropriate modified permittivity.
 While more laborious *fdtd-z* is designed to be fast as well as easy to parallelize, this work-around also allows for arbitrarily complex dispersions to be modeled accurately.
 
-### What about multi-frequency output sources?
+### What about more flexible output sources?
+
+Output sources are currently limited to materializing the E-field over the entire simulation domain for a set of equidistant time steps and leaving it to the user to back out frequency components as desired.
+While we have not exhaustively tested other output schemes, we can summarize the thinking behind this design decision.
+
+* The bandwidth costs of a continuous, or running, update are extremely high. In addition to having to read and write the E- and H-field values needed for the FDTD update, an update scheme (e.g. performing a rolling DFT) would have to both read and write output values at every frequency of interest as well.
+* The systolic update scheme negates some of the advantages of only materializing a sub-volume of the simulation domain -- the whole grid of CUDA threads really needs to move along at the same rate (this is also the reason why PML absorbing conditions are not implemented along the x-y plane since the additional, intially localized, computational cost would get spread across a large portion of the simulation domain). Additionally, the time-skew of the systolic scheme also significantly smears the additional cost initially localized to a single time step so that it is felt across multiple time steps.
+
+For these prinicipal reasons, *fdtd-z* has tried to limit output operations to be write-only and to be as temporally sparse as possible.
+That said, we do think there is room for additional flexibility in terms of allowing for (potentially multiple) subdomains to be materialized for a larger number of time steps in order to allow a greater number of frequency components to be inferred from a single simulation.
+Please let us know if this would be important for your application!
