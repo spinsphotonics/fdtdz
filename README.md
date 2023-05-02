@@ -44,3 +44,8 @@ While we have not exhaustively tested other output schemes, we can summarize the
 For these prinicipal reasons, *fdtd-z* has tried to limit output operations to be write-only and to be as temporally sparse as possible.
 That said, we do think there is room for additional flexibility in terms of allowing for (potentially multiple) subdomains to be materialized for a larger number of time steps in order to allow a greater number of frequency components to be inferred from a single simulation.
 Please let us know if this would be important for your application!
+
+### Is multi-GPU supported?
+
+While *fdtd-z* is not able to distribute a single simulation across multiple GPUs, building on [JAX](https://github.com/google/jax) means that there should be excellent support readily available for parallelization in terms of distributing multiple simulations across multiple GPUs (where each device has 1 or more simulations to solve).
+The `jax.pmap` [documentation](https://jax.readthedocs.io/en/latest/jax.html#parallelization-pmap) is probably the right starting point for this.
