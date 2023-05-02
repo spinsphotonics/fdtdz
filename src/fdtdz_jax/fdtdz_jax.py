@@ -191,7 +191,7 @@ def fdtdz(
       layers used in the simulation (`bot + top`) is required to be a multiple
       of `4`.
 
-    output_steps: `(start, interval, stop)` tuple of integers denoting the
+    output_steps: `(start, stop, interval)` tuple of integers denoting the
       update step at which to start recording output fields, the number of
       update steps separating successive output fields, and the step at which
       to stop recording (not included).
@@ -261,8 +261,8 @@ def fdtdz(
         f"[0, {yy if source_field.ndim == 3 else zz}) but got {source_position}."
     )
 
-  out_start, out_interval, out_stop = output_steps
-  out_num = (out_stop - out_start) // out_interval
+  out_start, out_stop, out_interval = output_steps
+  out_num = len(range(out_start, out_stop, out_interval))
   tt = out_start + out_interval * (out_num - 1) + 1
 
   if not (source_waveform.ndim == 2 and source_waveform.shape == (tt, 2)):
@@ -349,7 +349,7 @@ def fdtdz(
   abslayer = jnp.pad(abslayer, ((0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))
   srclayer = (
       jnp.pad(source_field,
-              ((0, 0), (0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))  # 
+              ((0, 0), (0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))  #
       if source_field.ndim == 4  #
       else jnp.pad(source_field, ((0, 0), (4, pxx - xx - 4), (0, 0))))
   zcoeff = jnp.stack(

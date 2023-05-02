@@ -1,19 +1,17 @@
+import fdtdz_jax
+from jax.test_util import check_grads
+from jax.config import config
+import jax.numpy as jnp
+import jax
+import pytest
 import numpy as np
 
 np.set_printoptions(threshold=np.inf)
 
-import pytest
-import jax
-import jax.numpy as jnp
-from jax.config import config
-from jax.test_util import check_grads
-
-import fdtdz_jax
-
 
 # TODO: Tests are missing!!!
 def test_fdtdz():
-  xx, yy, zz, tt = 16, 16, 44, 1
+  xx, yy, zz, tt = 16, 16, 44, 100
   epsilon = np.ones((3, xx, yy, zz), np.float32)
   dt = float(0.5)
   source_field = np.zeros((2, 2, xx, yy), np.float32)
@@ -25,7 +23,7 @@ def test_fdtdz():
   pml_kappa = np.ones((zz, 2), np.float32)
   pml_sigma = np.zeros((zz, 2), np.float32)
   pml_widths = (10, 10)
-  output_steps = (tt - 1, 1, tt)
+  output_steps = (tt - 10 - 1, tt, 10)
   use_reduced_precision = False
   launch_params = "Quadro RTX 4000"
 
@@ -46,3 +44,4 @@ def test_fdtdz():
 
   print(out[0, 0, :, :, zz // 2])
   print(f"Does output contain NaN values? {np.any(np.isnan(out))}")
+  print(out.shape)
