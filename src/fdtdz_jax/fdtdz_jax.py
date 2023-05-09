@@ -122,7 +122,7 @@ def fdtdz(
   of the Yee cell are all set to a (dimensionless) value of `1` (although the
   size of the cell along the z-axis can be varied).
 
-  [1] fdtd-z white paper (TODO: Add a real link)
+  [1] https://github.com/spinsphotonics/fdtdz/blob/main/paper/paper.pdf
   [2] Roden, J. Alan, and Stephen D. Gedney. "Convolution PML (CPML): An
       efficient FDTD implementation of the CFS–PML for arbitrary media."
       Microwave and optical technology letters 27.5 (2000): 334-339.
@@ -285,7 +285,7 @@ def fdtdz(
     raise ValueError(
         f"pml_kappa, pml_sigma, and pml_alpha must all have shape "
         f"(zz, 2) =  ({zz}, 2), but got shapes {pml_kappa.shape}, "
-        f"{pml_sigma.shape}, and {pml_alpha.shap} respectively instead.")
+        f"{pml_sigma.shape}, and {pml_alpha.shape} respectively instead.")
 
   if isinstance(launch_params, str):
     launch_params = _preset_launch_params(launch_params)
@@ -313,10 +313,11 @@ def fdtdz(
 
   # PML coefficients.
   pml_b = jnp.exp(-((pml_sigma / pml_kappa) + pml_alpha) * dt)
-  pml_a_denom = pml_sigma * pml_kappa + pml_alpha * pml_kappa**2
-  pml_a = (pml_b - 1) * np.where(pml_a_denom == 0,
-                                 1 / pml_kappa, pml_sigma / pml_a_denom)
   pml_z = 1 / pml_kappa
+  # Avoid division-by-zero.
+  pml_a_denom = pml_sigma * pml_kappa + pml_alpha * pml_kappa**2
+  pml_a = ((pml_b - 1) * np.where(pml_a_denom == 0, 1, pml_sigma) /
+           np.where(pml_a_denom == 0, pml_kappa, pml_a_denom))
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)
 
@@ -350,7 +351,6 @@ def fdtdz(
       "use_reduced_precision": use_reduced_precision,
   }
 
-  # TODO: Remove.
   cbuffer = jnp.pad(cbuffer,
                     ((0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4), (0, 0)))
   abslayer = jnp.pad(abslayer, ((0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))
@@ -375,24 +375,7 @@ def fdtdz(
 
   return out[:, :, 4:xx + 4, 4:yy + 4, :]
 
-  # Return unpadded output.
-  # return out[]
 
-  #
-  # Resolve launch_params
-  # TODO: Check that `source_position` is even for the `y = source_position`
-  # source.
-
-  # TODO: Make this documentation much better!
-
-
-# TODO: Need parameter-checking code.
-# TODO: Need cuda code to identify compute capability, and automatically pad
-#       cbuffer, abslayer, srclayer.
-# TODO: Write unit tests for all of this!
-
-
-# Make this the super low-level implementation
 def fdtdz_impl(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
   """Low-level API to the simulation kernel."""
   buffer_, cbuffer_, mask_, src_, output_ = _fdtdz_prim.bind(
