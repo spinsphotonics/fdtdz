@@ -313,11 +313,9 @@ def fdtdz(
 
   # PML coefficients.
   pml_b = jnp.exp(-((pml_sigma / pml_kappa) + pml_alpha) * dt)
-  # NOTE: Add documentation stating the correspondence between `pml_sigma` and
-  # `pml_alpha`.
-  pml_a_denom = (np.where(np.logical_or(pml_alpha == 0, pml_sigma == 0),
-                 1, pml_sigma * pml_kappa + pml_alpha * pml_kappa**2))
-  pml_a = (pml_b - 1) * pml_sigma / pml_a_denom
+  pml_a_denom = pml_sigma * pml_kappa + pml_alpha * pml_kappa**2
+  pml_a = (pml_b - 1) * np.where(pml_a_denom == 0,
+                                 1 / pml_kappa, pml_sigma / pml_a_denom)
   pml_z = 1 / pml_kappa
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)
