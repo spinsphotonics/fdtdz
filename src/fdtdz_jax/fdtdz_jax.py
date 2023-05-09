@@ -72,6 +72,7 @@ def fdtdz(
     absorption_mask,
     pml_kappa,
     pml_sigma,
+    pml_alpha,
     pml_widths,
     output_steps,
     use_reduced_precision,
@@ -115,7 +116,7 @@ def fdtdz(
 
     - Only current sources as hyperplanes along the y- and z-axes are
       implemented.
-  
+
   `fdtd-z` uses a "dimensionless" system [4] where the permittivity and
   permeability of vacuum (and therefore the speed of light), as well as the size
   of the Yee cell are all set to a (dimensionless) value of `1` (although the
@@ -167,14 +168,14 @@ def fdtdz(
       performance constraint that `source_position` must be even.
 
     absorption_mask: `(3, xx, yy)`-shaped array of floats representing a
-      z-invariant conductivity intended to allow for adiabatic absorbing 
+      z-invariant conductivity intended to allow for adiabatic absorbing
       boundary conditions along the x- and y-axes according to
       `conductivity(x, y, z) = aborption_mask(x, y) * epsilon(x, y, z)`
       for the `Ex`, `Ey`, and `Ez` component respectively.
 
     pml_kappa: `(zz, 2)`-shaped array of floats denoting the distance along the
       z-axis between adjacent Yee cells. This is primarily intended to be used
-      as a stretching parameter for the PML, but equivalently also determines 
+      as a stretching parameter for the PML, but equivalently also determines
       the unit cell length along the z-axis throughout the simulation domain.
       Specifically, `(zz, 0)` represents the distance between successive layers
       of `Ex`, `Ey`, and `Hz` nodes, while `(zz, 1)` represents the distance
@@ -184,6 +185,9 @@ def fdtdz(
       region, where `(zz, 0)` and `(zz, 1)` are the values at the
       (`Ex`, `Ey`, `Hz`) and (`Hx`, `Hy`, `Ez`) layers respectively. Must be set
       to `0` outside of the PML regions.
+
+    pml_alpha: `(zz, 2)`-shaped array of floats similar to `pml_sigma`. Must
+      also be set to `0` outside of the PML regions.
 
     pml_widths: `(bot, top)` integers specifying the number of cells which
       are to be designated as PML layers at the bottom and top of the
@@ -202,7 +206,7 @@ def fdtdz(
       along the z-axis. Both inputs and results are always expected as 32-bit
       arrays.
 
-    launch_params: Integers as an object in the form of 
+    launch_params: Integers as an object in the form of
       `((blocku, blockv), (gridu, gridv), spacing, (cc_major, cc_minor))`,
       specifying the structure of the systolic update to use on the GPU.
         - `(blocku, blockv)` determines the layout of warps in the u- and
@@ -276,10 +280,12 @@ def fdtdz(
         f"got {absorption_mask.shape} instead.")
 
   if not (pml_kappa.ndim == 2 and pml_kappa.shape == (zz, 2)
-          and pml_kappa.shape == pml_sigma.shape):
+          and pml_kappa.shape == pml_sigma.shape
+          and pml_kappa.shape == pml_alpha.shape):
     raise ValueError(
-        f"pml_kappa and pml_sigma must all have shape (zz, 2) = ({zz}, 2), "
-        f"but got shapes {pml_kappa.shape} and {pml_sigma.shape} instead.")
+        f"pml_kappa, pml_sigma, and pml_alpha must all have shape "
+        f"(zz, 2) =  ({zz}, 2), but got shapes {pml_kappa.shape}, "
+        f"{pml_sigma.shape}, and {pml_alpha.shap} respectively instead.")
 
   if isinstance(launch_params, str):
     launch_params = _preset_launch_params(launch_params)
@@ -306,9 +312,12 @@ def fdtdz(
   abslayer = ((1 / dt) - (absorption_mask / 2)) / denom
 
   # PML coefficients.
-  pml_b = jnp.exp(-((pml_sigma / pml_kappa)) * dt)
-  # NOTE: Consider reintroducing pml_alpha it will help us avoid underflow.
-  pml_a = (pml_b - 1) / pml_kappa
+  pml_b = jnp.exp(-((pml_sigma / pml_kappa) + pml_alpha) * dt)
+  # NOTE: Add documentation stating the correspondence between `pml_sigma` and
+  # `pml_alpha`.
+  pml_a_denom = (np.where(np.logical_or(pml_alpha == 0, pml_sigma == 0),
+                 1, pml_sigma * pml_kappa + pml_alpha * pml_kappa**2))
+  pml_a = (pml_b - 1) * pml_sigma / pml_a_denom
   pml_z = 1 / pml_kappa
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)

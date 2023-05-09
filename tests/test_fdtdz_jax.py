@@ -22,6 +22,7 @@ def test_fdtdz():
   absorption_mask = np.zeros((3, xx, yy), np.float32)
   pml_kappa = np.ones((zz, 2), np.float32)
   pml_sigma = np.zeros((zz, 2), np.float32)
+  pml_alpha = np.zeros((zz, 2), np.float32)
   pml_widths = (10, 10)
   output_steps = (tt - 10 - 1, tt, 10)
   use_reduced_precision = False
@@ -36,6 +37,7 @@ def test_fdtdz():
       absorption_mask,
       pml_kappa,
       pml_sigma,
+      pml_alpha,
       pml_widths,
       output_steps,
       use_reduced_precision,
