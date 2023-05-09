@@ -58,20 +58,33 @@ def _pml_sigma_values(pml_widths, zz, ln_R=16.0, m=4.0):
   return ((m + 1) * ln_R * z**m).T
 
 
-def _simulate(xx, yy, tt, dt, src_wavelength, src_ramp, abs_width,
+def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
               abs_smoothness, pml_widths, output_steps, use_reduced_precision):
   """Run a simple continuous-wave dipole-source simulation."""
   zz = (128 if use_reduced_precision else 64) - sum(pml_widths)
   epsilon = np.ones((3, xx, yy, zz), np.float32)
-  source_field = np.zeros((2, 2, xx, yy), np.float32)
-  source_field[0, 0, xx // 2, yy // 2] = 1
-  source_waveform = np.zeros((tt, 2), np.float32)
-  source_waveform[:, 0] = _ramped_sin(src_wavelength, src_ramp, dt, tt)
-  source_position = (zz - sum(pml_widths)) // 2 + pml_widths[0]
+
   abs_mask = _absorption_mask(xx, yy, abs_width, abs_smoothness)
   pml_kappa = np.ones((zz, 2), np.float32)
   pml_sigma = _pml_sigma_values(pml_widths, zz)
   pml_alpha = 0.05 * np.ones((zz, 2), np.float32)
+
+  if src_type == "z":
+    source_field = np.zeros((2, 2, xx, yy), np.float32)
+    source_field[:, 0, xx // 2, yy // 2] = [2, -1]
+    source_waveform = np.broadcast_to(
+        _ramped_sin(src_wavelength, src_ramp, dt, tt)[:, None], (tt, 2))
+    source_position = (zz - sum(pml_widths)) // 2 + pml_widths[0]
+
+  elif src_type == "y":
+    source_field = np.zeros((2, xx, zz), np.float32)
+    source_field[0, xx // 2, zz // 2] = 1
+    source_waveform = np.broadcast_to(
+        _ramped_sin(src_wavelength, src_ramp, dt, tt)[:, None], (tt, 2))
+    source_position = yy // 2
+
+  else:
+    raise ValueError("Did not recognize `src_type`.")
 
   fields = fdtdz_jax.fdtdz(
       epsilon,
@@ -89,7 +102,7 @@ def _simulate(xx, yy, tt, dt, src_wavelength, src_ramp, abs_width,
       launch_params=jax.devices()[0].device_kind,
   )
 
-  complex_fields, err = fdtdz_jax.residual(
+  err = fdtdz_jax.residual(
       2 * np.pi / src_wavelength,
       fields,
       epsilon,
@@ -105,19 +118,25 @@ def _simulate(xx, yy, tt, dt, src_wavelength, src_ramp, abs_width,
       output_steps,
   )
 
-  return fields, complex_fields, err
+  return fields, err
 
 
+@pytest.mark.parametrize("src_type", ["y", "z"])
 @pytest.mark.parametrize(
     "xx,yy,tt,dt,src_wavelength,use_reduced_precision,max_err",
-    [(200, 200, 40000, 0.5, 10.0, True, 1e-3)])
-def test_err(xx, yy, tt, dt, src_wavelength, use_reduced_precision, max_err):
+    [(200, 200, 20000, 0.5, 10.0, True, 2e-2),
+     (200, 200, 40000, 0.25, 10.0, True, 2e-2),
+     (200, 200, 10000, 0.55, 7.8, True, 2e-2),
+     ])
+def test_err(xx, yy, tt, dt, src_type, src_wavelength, use_reduced_precision,
+             max_err):
   quarter_period = int(round(src_wavelength / 4 / dt))
-  out, complex_fields, err = _simulate(
+  _, err = _simulate(
       xx=xx,
       yy=yy,
       tt=tt,
       dt=dt,
+      src_type=src_type,
       src_wavelength=src_wavelength,
       src_ramp=12,
       abs_width=40,

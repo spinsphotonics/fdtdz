@@ -44,8 +44,8 @@ def _frequency_component(out, steps, omega, dt):
 def _source_amplitude(source_waveform, omega, dt):
   """Returns complex scalar denoting source amplitude at `omega`."""
   theta = omega * dt * (np.arange(source_waveform.shape[0]) - 0.5)
-  parts = np.mean(2 * np.stack([np.cos(theta), -np.sin(theta)]) * source_waveform,
-                  axis=-1)
+  parts = np.mean(2 * np.stack([np.cos(theta), -np.sin(theta)])[..., None] * source_waveform,
+                  axis=1)
   return parts[0] + 1j * parts[1]
 
 
@@ -91,11 +91,16 @@ def residual(
 
   # TODO: Also need to do the version for ysrc, and need to use the second part
   # too.
-  src = np.zeros_like(complex_fields)
-  src[0, :, :, source_position] = source_field[0, 0, :, :]
-  src[1, :, :, source_position] = source_field[1, 0, :, :]
-  src *= _source_amplitude(source_waveform[:, 0], omega, dt) / dt
+  if source_field.ndim == 4:  # z-plane source.
+    amp = (1 / dt) * _source_amplitude(source_waveform, omega, dt)
+    src = np.zeros_like(complex_fields)
+    src[0:2, :, :, source_position] = np.sum(
+        amp[..., None, None, None] * source_field[:, 0:2, :, :], axis=0)
 
-  err = _wave_operator(omega, complex_fields, eps, sz, src)
+  else:  # y-plane source.
+    amp = (1 / dt) * _source_amplitude(source_waveform, omega, dt)
+    src = np.zeros_like(complex_fields)
+    src[(0, 2), :, source_position, :] = amp[0] * source_field
+    src[(0, 2), :, source_position-1, :] = amp[1] * source_field
 
-  return complex_fields, err
+  return _wave_operator(omega, complex_fields, eps, sz, src)
