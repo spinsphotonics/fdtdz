@@ -265,24 +265,25 @@ def fdtdz(
 
   _, xx, yy, _ = epsilon.shape
 
-  # if not ((source_field.ndim == 4 and source_field.shape == (2, 2, xx, yy, 1)) or
-  #         (source_field.ndim == 3 and source_field.shape == (2, xx, zz))):
-  if not ((is_source_type(source_field, "x") and
+  if not ((_is_source_type(source_field, "x") and
            source_field.shape == (2, 1, yy, zz)) or
-          (is_source_type(source_field, "y") and
+          (_is_source_type(source_field, "y") and
            source_field.shape == (2, xx, 1, zz)) or
           (_is_source_type(source_field, "z") and
            source_field.shape == (2, 2, xx, yy, 1))):
     raise ValueError(f"Invalid source_field shape, got {source_field.shape}.")
 
-  if not ((is_source_type(source_field, "x") and 0 <= source_position < xx) or
-          (is_source_type(source_field, "y") and 0 <= source_position < yy) or
-          (is_source_type(source_field, "z") and 0 <= source_position < zz)):
+  if not ((_is_source_type(source_field, "x") and 0 <= source_position < xx) or
+          (_is_source_type(source_field, "y") and 0 <= source_position < yy) or
+          (_is_source_type(source_field, "z") and 0 <= source_position < zz)):
     raise ValueError(
         f"Invalid source_position, must be within simulation domain but got "
         f"a value of {source_position}.")
 
-  # TODO: Do the rotation here and call into `fdtdz()` again.
+  # TODO: Implement this.
+  # if is_source_type(source_field "x"):
+    # Rotate about the `(x, y) = (1, 1)` axis to transform into a
+    # y-plane source.
 
   out_start, out_stop, out_interval = output_steps
   out_num = len(range(out_start, out_stop, out_interval))
@@ -340,7 +341,7 @@ def fdtdz(
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)
 
-  if _is_src_type(source_field, "z"):
+  if _is_source_type(source_field, "z"):
     srcpos = source_position + pml_widths[1]
   else:
     srcpos = source_position + _NUM_PAD_CELLS
@@ -360,7 +361,7 @@ def fdtdz(
       "domainy": pyy,
       "npml": npml,
       "zshift": pml_widths[1],
-      "srctype": 1 if source_field.ndim == 4 else 0,
+      "srctype": 1 if _is_source_type(source_field, "z") else 0,
       "srcpos": srcpos,
       "outstart": out_start,
       "outinterval": out_interval,
@@ -384,18 +385,16 @@ def fdtdz(
 
   # TODO: Should not have an x-source at this point.
   if _is_source_type(source_field, "y"):
-    srclayer = jnp.pad(source_field,
+    srclayer = jnp.pad(source_field[:, :, 0, :],
                        ((0, 0),
                         (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
-                        (0, 0),
                         (0, 0)))
   else:  # _is_source_type(source_field, "z").
-    srclayer = jnp.pad(source_field,
+    srclayer = jnp.pad(source_field[:, :, :, :, 0],
                        ((0, 0),
                         (0, 0),
                         (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
-                        (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
-                        (0, 0)))
+                        (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS)))
 
   zcoeff = jnp.stack(
       [
