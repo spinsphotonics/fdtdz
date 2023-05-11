@@ -20,6 +20,9 @@ from . import gpu_ops
 for _name, _value in gpu_ops.registrations().items():
   xla_client.register_custom_call_target(_name, _value, platform="gpu")
 
+# Number of cells to use for padding the systolic update scheme.
+_NUM_PAD_CELLS = 4
+
 
 def _preset_launch_params(device_kind):
   """Returns `(block, grid, spacing, cc)` parameters for `device_kind`."""
@@ -61,6 +64,13 @@ def _padded_domain_shape(shape, launch_params):
   yy = (2 * bu * gu) + n * (2 * bv * gv)
 
   return (xx, yy)
+
+
+def _is_source_type(f, type):
+  """`True` iff source field `f` is of `type`."""
+  return ((type == "x" and f.ndim == 4 and f.shape[1] == 1) or
+          (type == "y" and f.ndim == 4 and f.shape[2] == 1) or
+          (type == "z" and f.ndim == 5 and f.shape[4] == 1))
 
 
 def fdtdz(
@@ -144,22 +154,24 @@ def fdtdz(
 
     dt: Scalar float representing the amount of time elapsed in one update step.
 
-    source_field: Either a `(2, 2, xx, yy)`-shaped array for a source at
-      `z = source_position` or a `(2, xx, zz)`-shaped array for a source at
-      `y = source_position`. For a source at `z = source_position`, each
-      `(i, 2, xx, yy)` subarray represents one of two source fields each of
-      which holds `Ex` and `Ey` fields (in that order), while for a source at
-      `y = source_position`, the source field holds `Ex` and `Ez` (in that
-      order).
+    source_field: An array of shape `(2, 1, yy, zz)`, `(2, xx, 1, zz)`, or
+      `(2, 2, xx, yy, 1)`-shaped array for a source at
+      `x = source_position`, `y = source_position`, or `z = source_position`
+      respectively. The `(2, 1, yy, zz)` source features `Ey` and `Ez` 
+      components in that order, while the `(2, xx, 1, zz)` source features `Ex`
+      and `Ez` components in that order. The `(2, 2, xx, yy, 1)` allows for the
+      specification of two separate source fields at `[0, :, :, :, :]` and
+      `[1, :, :, :, :]` which each contain `Ex` and `Ey` components in that
+      order.
 
     source_waveform: `(tt, 2)`-shaped array of floats denoting the temporal
       variation to apply to the each of the source fields, where `tt` is the
       total number of update steps needed (note that the first update occurs at
       step `0`). Specifically, the subarray at `(tt, i)` applies a temporal
-      variation to the `(i, 2, xx, yy)` subarray of a source at
-      `z = source_position`, while for a source at `y = source_position` the
-      temporal variation is applied to the source field at
-      `y = source_position - i`.
+      variation to the `(i, 2, xx, yy. 1)` subarray of a source at
+      `z = source_position`, while for a source at `x = source_position` or 
+      `y = source_position` the temporal variation is applied to the source
+      field at `source_position - i`.
 
     source_position: integer representing the position of the source along
       either the y- or z-axes. For the case of a source at `y = source_position`
@@ -230,6 +242,8 @@ def fdtdz(
     (in that order) over the simulation domain, at a specific update step.
 
   """
+  # Detect x-source
+
   total_pml_width = pml_widths[0] + pml_widths[1]
 
   if not (total_pml_width % 4 == 0 and
@@ -251,19 +265,24 @@ def fdtdz(
 
   _, xx, yy, _ = epsilon.shape
 
-  if not ((source_field.ndim == 4 and source_field.shape == (2, 2, xx, yy)) or
-          (source_field.ndim == 3 and source_field.shape == (2, xx, zz))):
-    raise ValueError(
-        f"Invalid source_field shape, got {source_field.shape}. "
-        f"Must be either (2, 2, xx yy) = {(2, 2, xx, yy)} or (2, xx, zz) = "
-        f"{(2, xx, zz)}.")
+  # if not ((source_field.ndim == 4 and source_field.shape == (2, 2, xx, yy, 1)) or
+  #         (source_field.ndim == 3 and source_field.shape == (2, xx, zz))):
+  if not ((is_source_type(source_field, "x") and
+           source_field.shape == (2, 1, yy, zz)) or
+          (is_source_type(source_field, "y") and
+           source_field.shape == (2, xx, 1, zz)) or
+          (_is_source_type(source_field, "z") and
+           source_field.shape == (2, 2, xx, yy, 1))):
+    raise ValueError(f"Invalid source_field shape, got {source_field.shape}.")
 
-  if not ((source_field.ndim == 4 and 0 <= source_position < zz) or
-          (source_field.ndim == 3 and 0 <= source_position < yy)):
+  if not ((is_source_type(source_field, "x") and 0 <= source_position < xx) or
+          (is_source_type(source_field, "y") and 0 <= source_position < yy) or
+          (is_source_type(source_field, "z") and 0 <= source_position < zz)):
     raise ValueError(
-        f"Invalid source_position, must be between within "
-        f"[0, {yy if source_field.ndim == 3 else zz}) but got {source_position}."
-    )
+        f"Invalid source_position, must be within simulation domain but got "
+        f"a value of {source_position}.")
+
+  # TODO: Do the rotation here and call into `fdtdz()` again.
 
   out_start, out_stop, out_interval = output_steps
   out_num = len(range(out_start, out_stop, out_interval))
@@ -321,8 +340,10 @@ def fdtdz(
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)
 
-  srcpos = (source_position +
-            pml_widths[1] if source_field.ndim == 4 else source_position + 4)
+  if _is_src_type(source_field, "z"):
+    srcpos = source_position + pml_widths[1]
+  else:
+    srcpos = source_position + _NUM_PAD_CELLS
 
   dirname = os.path.join(os.path.dirname(sys.modules[__name__].__file__),
                          "ptx")
@@ -352,13 +373,30 @@ def fdtdz(
   }
 
   cbuffer = jnp.pad(cbuffer,
-                    ((0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4), (0, 0)))
-  abslayer = jnp.pad(abslayer, ((0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))
-  srclayer = (
-      jnp.pad(source_field,
-              ((0, 0), (0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))  #
-      if source_field.ndim == 4  #
-      else jnp.pad(source_field, ((0, 0), (4, pxx - xx - 4), (0, 0))))
+                    ((0, 0),
+                     (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                     (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
+                     (0, 0)))
+  abslayer = jnp.pad(abslayer,
+                     ((0, 0),
+                      (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                      (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS)))
+
+  # TODO: Should not have an x-source at this point.
+  if _is_source_type(source_field, "y"):
+    srclayer = jnp.pad(source_field,
+                       ((0, 0),
+                        (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                        (0, 0),
+                        (0, 0)))
+  else:  # _is_source_type(source_field, "z").
+    srclayer = jnp.pad(source_field,
+                       ((0, 0),
+                        (0, 0),
+                        (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                        (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
+                        (0, 0)))
+
   zcoeff = jnp.stack(
       [
           pml_a[:, 0],  #
@@ -373,7 +411,11 @@ def fdtdz(
   out = fdtdz_impl(cbuffer, abslayer, srclayer, source_waveform, zcoeff,
                    **kwargs)
 
-  return out[:, :, 4:xx + 4, 4:yy + 4, :]
+  return out[:,
+             :,
+             _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
+             _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
+             :]
 
 
 def fdtdz_impl(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
