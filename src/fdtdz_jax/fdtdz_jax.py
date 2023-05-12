@@ -255,8 +255,6 @@ def fdtdz(
     (in that order) over the simulation domain, at a specific update step.
 
   """
-  # Detect x-source
-
   total_pml_width = pml_widths[0] + pml_widths[1]
 
   if not (total_pml_width % 4 == 0 and
@@ -313,22 +311,27 @@ def fdtdz(
 
     pml_widths = [pml_widths[0] - 1, pml_widths[1] + 1]
 
-    # Simulate.
-    out = fdtdz(
-        epsilon,
-        dt,
-        source_field,
-        source_waveform,
-        source_position,
-        absorption_mask,
-        pml_kappa,
-        pml_sigma,
-        pml_alpha,
-        pml_widths,
-        output_steps,
-        use_reduced_precision,
-        launch_params
-    )
+    try:
+      out = fdtdz(
+          epsilon,
+          dt,
+          source_field,
+          source_waveform,
+          source_position,
+          absorption_mask,
+          pml_kappa,
+          pml_sigma,
+          pml_alpha,
+          pml_widths,
+          output_steps,
+          use_reduced_precision,
+          launch_params
+      )
+    except ValueError as e:
+      # Make a note that this occurred while doing the transform
+      raise ValueError(
+          "Note that the exception occurred while running the transformed "
+          "problem for a source at `x = source_position`.") from e
 
     # Un-rotate outputs.
     out = jnp.transpose(out, axes=(0, 1, 3, 2, 4))
@@ -365,7 +368,7 @@ def fdtdz(
 
   if not (block[0] * grid[0] <= block[1] * grid[1]):
     raise ValueError(
-        f"`launch_params` must have `(blocku, blockv)` and `(gridu, gridv)` "
+        f"launch_params must have `(blocku, blockv)` and `(gridu, gridv)` "
         "be \"v-dominant\" in that `blocku * gridu <= blockv * gridv` must be "
         "satisfied.")
 
@@ -393,6 +396,8 @@ def fdtdz(
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)
 
+  # Source position must be modified to account for either auxiliary PML cells
+  # or additional padding.
   if _is_source_type(source_field, "z"):
     srcpos = source_position + pml_widths[1]
   else:
@@ -435,7 +440,7 @@ def fdtdz(
                       (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
                       (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS)))
 
-  # TODO: Should not have an x-source at this point.
+  # Note that there should be no x-source at this point.
   if _is_source_type(source_field, "y"):
     srclayer = jnp.pad(source_field[:, :, 0, :],
                        ((0, 0),

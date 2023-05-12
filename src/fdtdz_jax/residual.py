@@ -83,8 +83,6 @@ def residual(
   complex_fields = _frequency_component(
       fields, np.arange(*output_steps), omega, dt)
 
-  # _, _, xx, yy, zz = fields.shape
-
   eps = epsilon * (1 - 1j * abs_mask[..., None] / omega)
 
   sz = pml_kappa + pml_sigma / (pml_alpha + 1j * omega)
