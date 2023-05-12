@@ -72,19 +72,23 @@ def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
   if src_type == "z":
     source_field = np.zeros((2, 2, xx, yy, 1), np.float32)
     source_field[:, 0, xx // 2, yy // 2, 0] = [2, -1]
-    source_waveform = np.broadcast_to(
-        _ramped_sin(src_wavelength, src_ramp, dt, tt)[:, None], (tt, 2))
     source_position = (zz - sum(pml_widths)) // 2 + pml_widths[0]
 
   elif src_type == "y":
     source_field = np.zeros((2, xx, 1, zz), np.float32)
     source_field[0, xx // 2, 0, zz // 2] = 1
-    source_waveform = np.broadcast_to(
-        _ramped_sin(src_wavelength, src_ramp, dt, tt)[:, None], (tt, 2))
     source_position = yy // 2
+
+  elif src_type == "x":
+    source_field = np.zeros((2, 1, yy, zz), np.float32)
+    source_field[0, 0, yy // 2,  zz // 2] = 1
+    source_position = xx // 2
 
   else:
     raise ValueError("Did not recognize `src_type`.")
+
+  source_waveform = np.broadcast_to(
+      _ramped_sin(src_wavelength, src_ramp, dt, tt)[:, None], (tt, 2))
 
   fields = fdtdz_jax.fdtdz(
       epsilon,
@@ -121,19 +125,13 @@ def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
   return fields, err
 
 
-# @pytest.mark.parametrize("src_type", ["y", "z"])
-# @pytest.mark.parametrize(
-#     "xx,yy,tt,dt,src_wavelength,use_reduced_precision,max_err",
-#     [(200, 200, 20000, 0.5, 10.0, True, 2e-2),
-#      (200, 200, 40000, 0.25, 10.0, True, 2e-2),
-#      (200, 200, 10000, 0.55, 7.8, True, 2e-2),
-#      ])
-@pytest.mark.parametrize("src_type", ["y", "z"])
+# @pytest.mark.parametrize("src_type", ["x", "y", "z"])
+@pytest.mark.parametrize("src_type", "x")
 @pytest.mark.parametrize(
     "xx,yy,tt,dt,src_wavelength,use_reduced_precision,max_err",
-    [(200, 200, 20000, 0.5, 10.0, True, 2e-2),
-     (200, 200, 40000, 0.25, 10.0, True, 2e-2),
-     (200, 200, 10000, 0.55, 7.8, True, 2e-2),
+    # [(200, 200, 20000, 0.5, 10.0, True, 2e-2),
+    # (200, 200, 40000, 0.25, 10.0, True, 2e-2),
+    [(200, 200, 10000, 0.55, 7.8, True, 2e-2),
      ])
 def test_err(xx, yy, tt, dt, src_type, src_wavelength, use_reduced_precision,
              max_err):

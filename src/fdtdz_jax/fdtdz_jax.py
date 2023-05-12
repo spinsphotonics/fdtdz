@@ -73,6 +73,14 @@ def _is_source_type(f, type):
           (type == "z" and f.ndim == 5 and f.shape[4] == 1))
 
 
+def fliproll(array, shift, axis):
+  return jnp.roll(jnp.flip(array, axis=axis), shift, axis=axis)
+
+
+def frs(array, shift, axis):
+  return jnp.flip(jnp.roll(jnp.flip(array, axis=axis), shift, axis=axis), axis=-1)
+
+
 def fdtdz(
     epsilon,
     dt,
@@ -157,7 +165,7 @@ def fdtdz(
     source_field: An array of shape `(2, 1, yy, zz)`, `(2, xx, 1, zz)`, or
       `(2, 2, xx, yy, 1)`-shaped array for a source at
       `x = source_position`, `y = source_position`, or `z = source_position`
-      respectively. The `(2, 1, yy, zz)` source features `Ey` and `Ez` 
+      respectively. The `(2, 1, yy, zz)` source features `Ey` and `Ez`
       components in that order, while the `(2, xx, 1, zz)` source features `Ex`
       and `Ez` components in that order. The `(2, 2, xx, yy, 1)` allows for the
       specification of two separate source fields at `[0, :, :, :, :]` and
@@ -169,7 +177,7 @@ def fdtdz(
       total number of update steps needed (note that the first update occurs at
       step `0`). Specifically, the subarray at `(tt, i)` applies a temporal
       variation to the `(i, 2, xx, yy. 1)` subarray of a source at
-      `z = source_position`, while for a source at `x = source_position` or 
+      `z = source_position`, while for a source at `x = source_position` or
       `y = source_position` the temporal variation is applied to the source
       field at `source_position - i`.
 
@@ -281,9 +289,55 @@ def fdtdz(
         f"a value of {source_position}.")
 
   # TODO: Implement this.
-  # if is_source_type(source_field "x"):
+  if _is_source_type(source_field, "x"):
     # Rotate about the `(x, y) = (1, 1)` axis to transform into a
     # y-plane source.
+
+    # Rotate epsilon
+    # [3, xx, yy, zz]
+    epsilon = jnp.transpose(epsilon, axes=(0, 2, 1, 3))
+    epsilon = fliproll(epsilon, shift=-1, axis=3)
+    epsilon = epsilon[(1, 0, 2), ...]
+
+    # Rotate source_field
+    # NOTE: Change the API after this.
+    source_field = fliproll(source_field, shift=-1, axis=3)
+    source_field = jnp.swapaxes(source_field, 1, 2)
+    # return jnp.roll(jnp.flip(array, axis=axis), shift, axis=axis)
+
+    # Rotate abs_mask
+    absorption_mask = jnp.transpose(absorption_mask, axes=(0, 2, 1))
+    absorption_mask = absorption_mask[(1, 0, 2), ...]
+
+    # Rotate pml_*
+    pml_kappa = frs(pml_kappa, shift=-1, axis=0)
+    pml_sigma = frs(pml_sigma, shift=-1, axis=0)
+    pml_alpha = frs(pml_alpha, shift=-1, axis=0)
+
+    pml_widths = [pml_widths[0] - 1, pml_widths[1] + 1]
+
+    # Simulate.
+    out = fdtdz(
+        epsilon,
+        dt,
+        source_field,
+        source_waveform,
+        source_position,
+        absorption_mask,
+        pml_kappa,
+        pml_sigma,
+        pml_alpha,
+        pml_widths,
+        output_steps,
+        use_reduced_precision,
+        launch_params
+    )
+
+    # Un-rotate outputs.
+    out = jnp.transpose(out, axes=(0, 1, 3, 2, 4))
+    out = fliproll(out, shift=-1, axis=4)
+    out = out[:, (1, 0, 2), ...]
+    return out
 
   out_start, out_stop, out_interval = output_steps
   out_num = len(range(out_start, out_stop, out_interval))
