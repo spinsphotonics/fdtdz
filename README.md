@@ -49,3 +49,11 @@ Please let us know if this would be important for your application!
 
 While *fdtd-z* is not able to distribute a single simulation across multiple GPUs, building on [JAX](https://github.com/google/jax) means that there should be excellent support readily available for parallelization in terms of distributing multiple simulations across multiple GPUs (where each device has 1 or more simulations to solve).
 The `jax.pmap` [documentation](https://jax.readthedocs.io/en/latest/jax.html#parallelization-pmap) is probably the right starting point for this.
+
+### `CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE`
+
+*fdtd-z* uses CUDA [cooperative groups](https://docs.nvidia.com/cuda/cuda-c-programming-guide/#cooperative-groups) to implement the systolic scheme outlined in the [whitepaper](paper/paper.pdf) and get around the GPU bandwidth bottleneck.
+Because of this, the [launch parameters](https://docs.nvidia.com/cuda/cuda-c-programming-guide/#thread-hierarchy) of the kernel become tightly connected to the underlying architecture of the GPU. 
+In particular the `(gridu, gridv)` part of the launch parameters must not exceed the number of streaming multiprocessors (SMs) that are on the GPU.
+For example, the RTX4000 has 36 GPUs so it would make sense to use `(gridu, gridv) = (6, 6)` (note that there is the additional constraint that `blocku * gridu <= blockv * gridv`).
+If `gridu * gridv` is greater than the number of available GPUs, then an attempt to launch the kernel will result in the `CUDA_ERROR_COOPERATIVE_LAUNCH_TOO_LARGE` error.
