@@ -104,16 +104,4 @@ def residual(
     src[(1, 2), source_position, :, :] = amp[0] * source_field[:, 0, :, :]
     src[(1, 2), source_position-1, :, :] = amp[1] * source_field[:, 0, :, :]
 
-  # if source_field.ndim == 5:  # z-plane source.
-  #   amp = (1 / dt) * _source_amplitude(source_waveform, omega, dt)
-  #   src = np.zeros_like(complex_fields)
-  #   src[0:2, :, :, source_position] = np.sum(
-  #       amp[..., None, None, None] * source_field[:, 0:2, :, :], axis=0)
-
-  # else:  # y-plane source.
-  #   amp = (1 / dt) * _source_amplitude(source_waveform, omega, dt)
-  #   src = np.zeros_like(complex_fields)
-  #   src[(0, 2), :, source_position, :] = amp[0] * source_field
-  #   src[(0, 2), :, source_position-1, :] = amp[1] * source_field
-
   return _wave_operator(omega, complex_fields, eps, sz, src)

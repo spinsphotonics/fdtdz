@@ -125,13 +125,12 @@ def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
   return fields, err
 
 
-# @pytest.mark.parametrize("src_type", ["x", "y", "z"])
-@pytest.mark.parametrize("src_type", "x")
+@pytest.mark.parametrize("src_type", ["x", "y", "z"])
 @pytest.mark.parametrize(
     "xx,yy,tt,dt,src_wavelength,use_reduced_precision,max_err",
-    # [(200, 200, 20000, 0.5, 10.0, True, 2e-2),
-    # (200, 200, 40000, 0.25, 10.0, True, 2e-2),
-    [(200, 200, 10000, 0.55, 7.8, True, 2e-2),
+    [(200, 200, 20000, 0.5, 10.0, True, 2e-2),
+     (200, 200, 40000, 0.25, 10.0, True, 2e-2),
+     (200, 200, 10000, 0.55, 7.8, True, 2e-2),
      ])
 def test_err(xx, yy, tt, dt, src_type, src_wavelength, use_reduced_precision,
              max_err):

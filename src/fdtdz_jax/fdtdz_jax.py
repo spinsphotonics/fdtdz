@@ -73,12 +73,17 @@ def _is_source_type(f, type):
           (type == "z" and f.ndim == 5 and f.shape[4] == 1))
 
 
-def fliproll(array, shift, axis):
-  return jnp.roll(jnp.flip(array, axis=axis), shift, axis=axis)
+def _flip_roll_component(array, component, splitaxis, flipaxis, scalez=1.0):
+  """Flip around `slipaxis` and shift `component` of `splitaxis`."""
+  array = jnp.flip(array, axis=flipaxis)
+  splits = jnp.split(array, array.shape[splitaxis], axis=splitaxis)
+  splits[component] = scalez * jnp.roll(splits[component], -1, axis=flipaxis)
+  return jnp.concatenate(splits, axis=splitaxis)
 
 
-def frs(array, shift, axis):
-  return jnp.flip(jnp.roll(jnp.flip(array, axis=axis), shift, axis=axis), axis=-1)
+def _flip_roll(array, axis):
+  """Flip on all axes, shift on `axis`."""
+  return jnp.roll(jnp.flip(array, axis=range(array.ndim)), -1, axis=axis)
 
 
 def fdtdz(
@@ -288,31 +293,23 @@ def fdtdz(
         f"Invalid source_position, must be within simulation domain but got "
         f"a value of {source_position}.")
 
-  # TODO: Implement this.
+  # Rotate about the `(x, y) = (1, 1)` axis to transform into a y-plane source.
   if _is_source_type(source_field, "x"):
-    # Rotate about the `(x, y) = (1, 1)` axis to transform into a
-    # y-plane source.
-
-    # Rotate epsilon
-    # [3, xx, yy, zz]
     epsilon = jnp.transpose(epsilon, axes=(0, 2, 1, 3))
-    epsilon = fliproll(epsilon, shift=-1, axis=3)
     epsilon = epsilon[(1, 0, 2), ...]
+    epsilon = _flip_roll_component(
+        epsilon, component=2, splitaxis=0, flipaxis=3)
 
-    # Rotate source_field
-    # NOTE: Change the API after this.
-    source_field = fliproll(source_field, shift=-1, axis=3)
     source_field = jnp.swapaxes(source_field, 1, 2)
-    # return jnp.roll(jnp.flip(array, axis=axis), shift, axis=axis)
+    source_field = _flip_roll_component(source_field, component=1,
+                                        splitaxis=0, flipaxis=3)
 
-    # Rotate abs_mask
     absorption_mask = jnp.transpose(absorption_mask, axes=(0, 2, 1))
     absorption_mask = absorption_mask[(1, 0, 2), ...]
 
-    # Rotate pml_*
-    pml_kappa = frs(pml_kappa, shift=-1, axis=0)
-    pml_sigma = frs(pml_sigma, shift=-1, axis=0)
-    pml_alpha = frs(pml_alpha, shift=-1, axis=0)
+    pml_kappa = _flip_roll(pml_kappa, axis=0)
+    pml_sigma = _flip_roll(pml_sigma, axis=0)
+    pml_alpha = _flip_roll(pml_alpha, axis=0)
 
     pml_widths = [pml_widths[0] - 1, pml_widths[1] + 1]
 
@@ -335,8 +332,9 @@ def fdtdz(
 
     # Un-rotate outputs.
     out = jnp.transpose(out, axes=(0, 1, 3, 2, 4))
-    out = fliproll(out, shift=-1, axis=4)
     out = out[:, (1, 0, 2), ...]
+    out = _flip_roll_component(
+        out, component=2, splitaxis=1, flipaxis=4, scalez=-1)
     return out
 
   out_start, out_stop, out_interval = output_steps
