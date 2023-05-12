@@ -6,8 +6,6 @@ import jax
 import pytest
 import numpy as np
 
-# TODO: Do a DTFT on this and change "ramp" to be something like "width".
-
 
 def _ramped_sin(wavelength, ramp, dt, tt, delay=4):
   """Sine function with a gradual ramp."""
