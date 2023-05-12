@@ -8,6 +8,24 @@
 Give it a test drive [![in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/jlu-spins/0f3c5459bd4386150ae30b17f7c6a5e3/welcome-to-fdtd-z.ipynb),
 join the chat [![on https://gitter.im/fdtdz/community](https://badges.gitter.im/fdtdz/community.svg)](https://app.gitter.im/#/room/#fdtdz:gitter.im), and read the [whitepaper](paper/paper.pdf).
 
+### API
+
+***fdtd-z*** exposes a low-level API `fdtdz()` to launch FDTD kernels on the GPU while giving the user fine-grained control over values for permittivity, current source, boundary conditions, and more.
+
+In order to optimize the simulation throughput for nanophotonic applications, a number of constraints are placed on the allowable inputs such as limited dimension of the z-axis, simple non-absorbing dielectric materials only, and adiabatic absorption boundaries along the x- and y-axes.
+See the `fdtdz()` docstring for all the details.
+
+While it does not include all the bells and whistles, it is *fast*: delivering ~100X speed-up compared to MEEP/Lumerical even on commodity GPUs such as the Nvidia T4; and we're looking forward to building out the required functionality with the open-source photonics community!
+
+That said, don't take our word for it, [try it out for yourself](https://colab.research.google.com/gist/jlu-spins/0f3c5459bd4386150ae30b17f7c6a5e3/welcome-to-fdtd-z.ipynb)!
+
+### Install
+
+You must have the GPU-version of [JAX](https://github.com/google/jax) installed first, see [instructions here](https://github.com/google/jax#pip-installation-gpu-cuda-installed-via-pip-easier).
+Once this is done, you can just do `pip install fdtdz`.
+
+Of course, you can always circumvent things and just `!pip install fdtdz` directly from a Colab notebook as is done in the [example notebook](https://colab.research.google.com/gist/jlu-spins/0f3c5459bd4386150ae30b17f7c6a5e3/welcome-to-fdtd-z.ipynb).
+
 ## Frequently Asked Questions
 
 ### Is the plan to build additional functionality inside the *fdtd-z* repo?

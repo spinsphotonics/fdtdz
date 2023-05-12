@@ -1,5 +1,3 @@
-# -*- coding: utf-8 -*-
-
 __all__ = ["fdtdz"]
 
 import functools
@@ -19,6 +17,9 @@ from jaxlib.hlo_helpers import custom_call
 from . import gpu_ops
 for _name, _value in gpu_ops.registrations().items():
   xla_client.register_custom_call_target(_name, _value, platform="gpu")
+
+# Number of cells to use for padding the systolic update scheme.
+_NUM_PAD_CELLS = 4
 
 
 def _preset_launch_params(device_kind):
@@ -63,6 +64,26 @@ def _padded_domain_shape(shape, launch_params):
   return (xx, yy)
 
 
+def _is_source_type(f, type):
+  """`True` iff source field `f` is of `type`."""
+  return ((type == "x" and f.ndim == 4 and f.shape[1] == 1) or
+          (type == "y" and f.ndim == 4 and f.shape[2] == 1) or
+          (type == "z" and f.ndim == 5 and f.shape[4] == 1))
+
+
+def _flip_roll_component(array, component, splitaxis, flipaxis, scalez=1.0):
+  """Flip around `slipaxis` and shift `component` of `splitaxis`."""
+  array = jnp.flip(array, axis=flipaxis)
+  splits = jnp.split(array, array.shape[splitaxis], axis=splitaxis)
+  splits[component] = scalez * jnp.roll(splits[component], -1, axis=flipaxis)
+  return jnp.concatenate(splits, axis=splitaxis)
+
+
+def _flip_roll(array, axis):
+  """Flip on all axes, shift on `axis`."""
+  return jnp.roll(jnp.flip(array, axis=range(array.ndim)), -1, axis=axis)
+
+
 def fdtdz(
     epsilon,
     dt,
@@ -72,6 +93,7 @@ def fdtdz(
     absorption_mask,
     pml_kappa,
     pml_sigma,
+    pml_alpha,
     pml_widths,
     output_steps,
     use_reduced_precision,
@@ -115,13 +137,13 @@ def fdtdz(
 
     - Only current sources as hyperplanes along the y- and z-axes are
       implemented.
-  
+
   `fdtd-z` uses a "dimensionless" system [4] where the permittivity and
   permeability of vacuum (and therefore the speed of light), as well as the size
   of the Yee cell are all set to a (dimensionless) value of `1` (although the
   size of the cell along the z-axis can be varied).
 
-  [1] fdtd-z white paper (TODO: Add a real link)
+  [1] https://github.com/spinsphotonics/fdtdz/blob/main/paper/paper.pdf
   [2] Roden, J. Alan, and Stephen D. Gedney. "Convolution PML (CPML): An
       efficient FDTD implementation of the CFS–PML for arbitrary media."
       Microwave and optical technology letters 27.5 (2000): 334-339.
@@ -143,22 +165,24 @@ def fdtdz(
 
     dt: Scalar float representing the amount of time elapsed in one update step.
 
-    source_field: Either a `(2, 2, xx, yy)`-shaped array for a source at
-      `z = source_position` or a `(2, xx, zz)`-shaped array for a source at
-      `y = source_position`. For a source at `z = source_position`, each
-      `(i, 2, xx, yy)` subarray represents one of two source fields each of
-      which holds `Ex` and `Ey` fields (in that order), while for a source at
-      `y = source_position`, the source field holds `Ex` and `Ez` (in that
-      order).
+    source_field: An array of shape `(2, 1, yy, zz)`, `(2, xx, 1, zz)`, or
+      `(2, 2, xx, yy, 1)`-shaped array for a source at
+      `x = source_position`, `y = source_position`, or `z = source_position`
+      respectively. The `(2, 1, yy, zz)` source features `Ey` and `Ez`
+      components in that order, while the `(2, xx, 1, zz)` source features `Ex`
+      and `Ez` components in that order. The `(2, 2, xx, yy, 1)` allows for the
+      specification of two separate source fields at `[0, :, :, :, :]` and
+      `[1, :, :, :, :]` which each contain `Ex` and `Ey` components in that
+      order.
 
     source_waveform: `(tt, 2)`-shaped array of floats denoting the temporal
       variation to apply to the each of the source fields, where `tt` is the
       total number of update steps needed (note that the first update occurs at
       step `0`). Specifically, the subarray at `(tt, i)` applies a temporal
-      variation to the `(i, 2, xx, yy)` subarray of a source at
-      `z = source_position`, while for a source at `y = source_position` the
-      temporal variation is applied to the source field at
-      `y = source_position - i`.
+      variation to the `(i, 2, xx, yy. 1)` subarray of a source at
+      `z = source_position`, while for a source at `x = source_position` or
+      `y = source_position` the temporal variation is applied to the source
+      field at `source_position - i`.
 
     source_position: integer representing the position of the source along
       either the y- or z-axes. For the case of a source at `y = source_position`
@@ -167,14 +191,14 @@ def fdtdz(
       performance constraint that `source_position` must be even.
 
     absorption_mask: `(3, xx, yy)`-shaped array of floats representing a
-      z-invariant conductivity intended to allow for adiabatic absorbing 
+      z-invariant conductivity intended to allow for adiabatic absorbing
       boundary conditions along the x- and y-axes according to
       `conductivity(x, y, z) = aborption_mask(x, y) * epsilon(x, y, z)`
       for the `Ex`, `Ey`, and `Ez` component respectively.
 
     pml_kappa: `(zz, 2)`-shaped array of floats denoting the distance along the
       z-axis between adjacent Yee cells. This is primarily intended to be used
-      as a stretching parameter for the PML, but equivalently also determines 
+      as a stretching parameter for the PML, but equivalently also determines
       the unit cell length along the z-axis throughout the simulation domain.
       Specifically, `(zz, 0)` represents the distance between successive layers
       of `Ex`, `Ey`, and `Hz` nodes, while `(zz, 1)` represents the distance
@@ -185,13 +209,16 @@ def fdtdz(
       (`Ex`, `Ey`, `Hz`) and (`Hx`, `Hy`, `Ez`) layers respectively. Must be set
       to `0` outside of the PML regions.
 
+    pml_alpha: `(zz, 2)`-shaped array of floats similar to `pml_sigma`. Must
+      also be set to `0` outside of the PML regions.
+
     pml_widths: `(bot, top)` integers specifying the number of cells which
       are to be designated as PML layers at the bottom and top of the
       simulation respectively. For performance reasons, the total number of PML
       layers used in the simulation (`bot + top`) is required to be a multiple
       of `4`.
 
-    output_steps: `(start, interval, stop)` tuple of integers denoting the
+    output_steps: `(start, stop, interval)` tuple of integers denoting the
       update step at which to start recording output fields, the number of
       update steps separating successive output fields, and the step at which
       to stop recording (not included).
@@ -202,7 +229,7 @@ def fdtdz(
       along the z-axis. Both inputs and results are always expected as 32-bit
       arrays.
 
-    launch_params: Integers as an object in the form of 
+    launch_params: Integers as an object in the form of
       `((blocku, blockv), (gridu, gridv), spacing, (cc_major, cc_minor))`,
       specifying the structure of the systolic update to use on the GPU.
         - `(blocku, blockv)` determines the layout of warps in the u- and
@@ -247,22 +274,72 @@ def fdtdz(
 
   _, xx, yy, _ = epsilon.shape
 
-  if not ((source_field.ndim == 4 and source_field.shape == (2, 2, xx, yy)) or
-          (source_field.ndim == 3 and source_field.shape == (2, xx, zz))):
-    raise ValueError(
-        f"Invalid source_field shape, got {source_field.shape}. "
-        f"Must be either (2, 2, xx yy) = {(2, 2, xx, yy)} or (2, xx, zz) = "
-        f"{(2, xx, zz)}.")
+  if not ((_is_source_type(source_field, "x") and
+           source_field.shape == (2, 1, yy, zz)) or
+          (_is_source_type(source_field, "y") and
+           source_field.shape == (2, xx, 1, zz)) or
+          (_is_source_type(source_field, "z") and
+           source_field.shape == (2, 2, xx, yy, 1))):
+    raise ValueError(f"Invalid source_field shape, got {source_field.shape}.")
 
-  if not ((source_field.ndim == 4 and 0 <= source_position < zz) or
-          (source_field.ndim == 3 and 0 <= source_position < yy)):
+  if not ((_is_source_type(source_field, "x") and 0 <= source_position < xx) or
+          (_is_source_type(source_field, "y") and 0 <= source_position < yy) or
+          (_is_source_type(source_field, "z") and 0 <= source_position < zz)):
     raise ValueError(
-        f"Invalid source_position, must be between within "
-        f"[0, {yy if source_field.ndim == 3 else zz}) but got {source_position}."
-    )
+        f"Invalid source_position, must be within simulation domain but got "
+        f"a value of {source_position}.")
 
-  out_start, out_interval, out_stop = output_steps
-  out_num = (out_stop - out_start) // out_interval
+  # Rotate about the `(x, y) = (1, 1)` axis to transform into a y-plane source.
+  if _is_source_type(source_field, "x"):
+    epsilon = jnp.transpose(epsilon, axes=(0, 2, 1, 3))
+    epsilon = epsilon[(1, 0, 2), ...]
+    epsilon = _flip_roll_component(
+        epsilon, component=2, splitaxis=0, flipaxis=3)
+
+    source_field = jnp.swapaxes(source_field, 1, 2)
+    source_field = _flip_roll_component(source_field, component=1,
+                                        splitaxis=0, flipaxis=3)
+
+    absorption_mask = jnp.transpose(absorption_mask, axes=(0, 2, 1))
+    absorption_mask = absorption_mask[(1, 0, 2), ...]
+
+    pml_kappa = _flip_roll(pml_kappa, axis=0)
+    pml_sigma = _flip_roll(pml_sigma, axis=0)
+    pml_alpha = _flip_roll(pml_alpha, axis=0)
+
+    pml_widths = [pml_widths[0] - 1, pml_widths[1] + 1]
+
+    try:
+      out = fdtdz(
+          epsilon,
+          dt,
+          source_field,
+          source_waveform,
+          source_position,
+          absorption_mask,
+          pml_kappa,
+          pml_sigma,
+          pml_alpha,
+          pml_widths,
+          output_steps,
+          use_reduced_precision,
+          launch_params
+      )
+    except ValueError as e:
+      # Make a note that this occurred while doing the transform
+      raise ValueError(
+          "Note that the exception occurred while running the transformed "
+          "problem for a source at `x = source_position`.") from e
+
+    # Un-rotate outputs.
+    out = jnp.transpose(out, axes=(0, 1, 3, 2, 4))
+    out = out[:, (1, 0, 2), ...]
+    out = _flip_roll_component(
+        out, component=2, splitaxis=1, flipaxis=4, scalez=-1)
+    return out
+
+  out_start, out_stop, out_interval = output_steps
+  out_num = len(range(out_start, out_stop, out_interval))
   tt = out_start + out_interval * (out_num - 1) + 1
 
   if not (source_waveform.ndim == 2 and source_waveform.shape == (tt, 2)):
@@ -276,10 +353,12 @@ def fdtdz(
         f"got {absorption_mask.shape} instead.")
 
   if not (pml_kappa.ndim == 2 and pml_kappa.shape == (zz, 2)
-          and pml_kappa.shape == pml_sigma.shape):
+          and pml_kappa.shape == pml_sigma.shape
+          and pml_kappa.shape == pml_alpha.shape):
     raise ValueError(
-        f"pml_kappa and pml_sigma must all have shape (zz, 2) = ({zz}, 2), "
-        f"but got shapes {pml_kappa.shape} and {pml_sigma.shape} instead.")
+        f"pml_kappa, pml_sigma, and pml_alpha must all have shape "
+        f"(zz, 2) =  ({zz}, 2), but got shapes {pml_kappa.shape}, "
+        f"{pml_sigma.shape}, and {pml_alpha.shape} respectively instead.")
 
   if isinstance(launch_params, str):
     launch_params = _preset_launch_params(launch_params)
@@ -287,7 +366,7 @@ def fdtdz(
 
   if not (block[0] * grid[0] <= block[1] * grid[1]):
     raise ValueError(
-        f"`launch_params` must have `(blocku, blockv)` and `(gridu, gridv)` "
+        f"launch_params must have `(blocku, blockv)` and `(gridu, gridv)` "
         "be \"v-dominant\" in that `blocku * gridu <= blockv * gridv` must be "
         "satisfied.")
 
@@ -306,15 +385,21 @@ def fdtdz(
   abslayer = ((1 / dt) - (absorption_mask / 2)) / denom
 
   # PML coefficients.
-  pml_b = jnp.exp(-((pml_sigma / pml_kappa)) * dt)
-  # NOTE: Consider reintroducing pml_alpha it will help us avoid underflow.
-  pml_a = (pml_b - 1) / pml_kappa
+  pml_b = jnp.exp(-((pml_sigma / pml_kappa) + pml_alpha) * dt)
   pml_z = 1 / pml_kappa
+  # Avoid division-by-zero.
+  pml_a_denom = pml_sigma * pml_kappa + pml_alpha * pml_kappa**2
+  pml_a = ((pml_b - 1) * np.where(pml_a_denom == 0, 1, pml_sigma) /
+           np.where(pml_a_denom == 0, pml_kappa, pml_a_denom))
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)
 
-  srcpos = (source_position +
-            pml_widths[1] if source_field.ndim == 4 else source_position + 4)
+  # Source position must be modified to account for either auxiliary PML cells
+  # or additional padding.
+  if _is_source_type(source_field, "z"):
+    srcpos = source_position + pml_widths[1]
+  else:
+    srcpos = source_position + _NUM_PAD_CELLS
 
   dirname = os.path.join(os.path.dirname(sys.modules[__name__].__file__),
                          "ptx")
@@ -331,7 +416,7 @@ def fdtdz(
       "domainy": pyy,
       "npml": npml,
       "zshift": pml_widths[1],
-      "srctype": 1 if source_field.ndim == 4 else 0,
+      "srctype": 1 if _is_source_type(source_field, "z") else 0,
       "srcpos": srcpos,
       "outstart": out_start,
       "outinterval": out_interval,
@@ -343,15 +428,29 @@ def fdtdz(
       "use_reduced_precision": use_reduced_precision,
   }
 
-  # TODO: Remove.
   cbuffer = jnp.pad(cbuffer,
-                    ((0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4), (0, 0)))
-  abslayer = jnp.pad(abslayer, ((0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))
-  srclayer = (
-      jnp.pad(source_field,
-              ((0, 0), (0, 0), (4, pxx - xx - 4), (4, pyy - yy - 4)))  # 
-      if source_field.ndim == 4  #
-      else jnp.pad(source_field, ((0, 0), (4, pxx - xx - 4), (0, 0))))
+                    ((0, 0),
+                     (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                     (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
+                     (0, 0)))
+  abslayer = jnp.pad(abslayer,
+                     ((0, 0),
+                      (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                      (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS)))
+
+  # Note that there should be no x-source at this point.
+  if _is_source_type(source_field, "y"):
+    srclayer = jnp.pad(source_field[:, :, 0, :],
+                       ((0, 0),
+                        (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                        (0, 0)))
+  else:  # _is_source_type(source_field, "z").
+    srclayer = jnp.pad(source_field[:, :, :, :, 0],
+                       ((0, 0),
+                        (0, 0),
+                        (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                        (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS)))
+
   zcoeff = jnp.stack(
       [
           pml_a[:, 0],  #
@@ -366,26 +465,13 @@ def fdtdz(
   out = fdtdz_impl(cbuffer, abslayer, srclayer, source_waveform, zcoeff,
                    **kwargs)
 
-  return out[:, :, 4:xx + 4, 4:yy + 4, :]
-
-  # Return unpadded output.
-  # return out[]
-
-  #
-  # Resolve launch_params
-  # TODO: Check that `source_position` is even for the `y = source_position`
-  # source.
-
-  # TODO: Make this documentation much better!
+  return out[:,
+             :,
+             _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
+             _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
+             :]
 
 
-# TODO: Need parameter-checking code.
-# TODO: Need cuda code to identify compute capability, and automatically pad
-#       cbuffer, abslayer, srclayer.
-# TODO: Write unit tests for all of this!
-
-
-# Make this the super low-level implementation
 def fdtdz_impl(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
   """Low-level API to the simulation kernel."""
   buffer_, cbuffer_, mask_, src_, output_ = _fdtdz_prim.bind(

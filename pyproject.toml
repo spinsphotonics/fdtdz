@@ -3,4 +3,4 @@ requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4", "pybind11>=2
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools_scm]
-# write_to = "src/kepler_jax/kepler_jax_version.py"
+write_to = "src/fdtdz_jax/fdtdz_jax_version.py"
