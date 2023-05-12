@@ -103,6 +103,8 @@ setup(
     package_dir={"": "src"},
     include_package_data=True,
     install_requires=["jax", "jaxlib"],
+    setup_requires=["setuptools_scm"],
+    use_scm_version=True,
     extras_require={"test": "pytest"},
     ext_modules=extensions,
     cmdclass={"build_ext": CMakeBuildExt},
