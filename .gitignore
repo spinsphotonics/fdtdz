@@ -1,0 +1,12 @@
+[bB]uild
+[bB]uild/**
+
+# artifacts of build
+.eggs/
+.eggs/**
+src/fdtdz.egg-info/**
+src/fdtdz_jax/fdtdz_jax_version.py
+
+# artifacts of install
+dist/
+dist/**
