@@ -24,6 +24,8 @@ That said, don't take our word for it, [try it out for yourself](https://colab.r
 You must have the GPU-version of [JAX](https://github.com/google/jax) installed first, see [instructions here](https://github.com/google/jax#pip-installation-gpu-cuda-installed-via-pip-easier).
 Once this is done, you can just do `pip install fdtdz` or `!pip install fdtdz` directly from a Colab notebook as is done in the [example notebook](https://colab.research.google.com/gist/jlu-spins/0f3c5459bd4386150ae30b17f7c6a5e3/welcome-to-fdtd-z.ipynb).
 
+To install from source, please see this [very helpful write-up](https://github.com/spinsphotonics/fdtdz/issues/14#issue-1794133653) by [@johnrollinson](https://github.com/johnrollinson).
+
 ## Frequently Asked Questions
 
 ### Is the plan to build additional functionality inside the *fdtd-z* repo?
