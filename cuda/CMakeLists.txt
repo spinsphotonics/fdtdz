@@ -134,7 +134,7 @@ cuda_unit_test(kernel_jax)
 
 # Sanitizer test, which can help with memory issues.
 add_test(NAME sanitizer_test 
-         COMMAND /usr/local/cuda-11.8/bin/compute-sanitizer
+  COMMAND ${CUDAToolkit_BIN_DIR}/compute-sanitizer
                  $<TARGET_FILE:verification_test>)
 set_tests_properties(sanitizer_test PROPERTIES FIXTURES_REQUIRED all_ptx_kernels_fixture)
 
