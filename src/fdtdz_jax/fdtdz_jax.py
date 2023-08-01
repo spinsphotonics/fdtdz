@@ -156,15 +156,12 @@ def fdtdz(
       Communications 181.3 (2010): 687-702.
 
   Args:
-
     epsilon: `(3, xx, yy, zz)`-shaped array of floats representing the
       permittivity values at the `Ex`, `Ey`, and `Ez` nodes of the Yee cell
       respectively. We use the convention that these components are located at
       `(0.5, 0, 0)`, `(0, 0.5, 0)`, and `(0, 0, 0.5)` respectively, for a Yee
       cell of side-length 1.
-
     dt: Scalar float representing the amount of time elapsed in one update step.
-
     source_field: An array of shape `(2, 1, yy, zz)`, `(2, xx, 1, zz)`, or
       `(2, 2, xx, yy, 1)`-shaped array for a source at
       `x = source_position`, `y = source_position`, or `z = source_position`
@@ -174,7 +171,6 @@ def fdtdz(
       specification of two separate source fields at `[0, :, :, :, :]` and
       `[1, :, :, :, :]` which each contain `Ex` and `Ey` components in that
       order.
-
     source_waveform: `(tt, 2)`-shaped array of floats denoting the temporal
       variation to apply to the each of the source fields, where `tt` is the
       total number of update steps needed (note that the first update occurs at
@@ -183,19 +179,16 @@ def fdtdz(
       `z = source_position`, while for a source at `x = source_position` or
       `y = source_position` the temporal variation is applied to the source
       field at `source_position - i`.
-
     source_position: integer representing the position of the source along
       either the y- or z-axes. For the case of a source at `y = source_position`
       the source field is applied (with the corresponding waveform) at both
       `y = source_position` and `y = source_position - 1`, with the additional
       performance constraint that `source_position` must be even.
-
     absorption_mask: `(3, xx, yy)`-shaped array of floats representing a
       z-invariant conductivity intended to allow for adiabatic absorbing
       boundary conditions along the x- and y-axes according to
       `conductivity(x, y, z) = aborption_mask(x, y) * epsilon(x, y, z)`
       for the `Ex`, `Ey`, and `Ez` component respectively.
-
     pml_kappa: `(zz, 2)`-shaped array of floats denoting the distance along the
       z-axis between adjacent Yee cells. This is primarily intended to be used
       as a stretching parameter for the PML, but equivalently also determines
@@ -203,32 +196,26 @@ def fdtdz(
       Specifically, `(zz, 0)` represents the distance between successive layers
       of `Ex`, `Ey`, and `Hz` nodes, while `(zz, 1)` represents the distance
       between layers of `Hx`, `Hy`, and `Ez` nodes.
-
     pml_sigma: `(zz, 2)`-shaped array of floats for the conductivity of the PML
       region, where `(zz, 0)` and `(zz, 1)` are the values at the
       (`Ex`, `Ey`, `Hz`) and (`Hx`, `Hy`, `Ez`) layers respectively. Must be set
       to `0` outside of the PML regions.
-
     pml_alpha: `(zz, 2)`-shaped array of floats similar to `pml_sigma`. Must
       also be set to `0` outside of the PML regions.
-
     pml_widths: `(bot, top)` integers specifying the number of cells which
       are to be designated as PML layers at the bottom and top of the
       simulation respectively. For performance reasons, the total number of PML
       layers used in the simulation (`bot + top`) is required to be a multiple
       of `4`.
-
     output_steps: `(start, stop, interval)` tuple of integers denoting the
       update step at which to start recording output fields, the number of
       update steps separating successive output fields, and the step at which
       to stop recording (not included).
-
     use_reduced_precision: If `True`, uses 16-bit (IEEE 754) precision for the
       simulation which allows for a maximum of 128 cells along the z-axis.
       Otherwise, uses 32-bit single-precision with a maximum of 64 cells
       along the z-axis. Both inputs and results are always expected as 32-bit
       arrays.
-
     launch_params: Integers as an object in the form of
       `((blocku, blockv), (gridu, gridv), spacing, (cc_major, cc_minor))`,
       specifying the structure of the systolic update to use on the GPU.
