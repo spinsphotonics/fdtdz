@@ -302,6 +302,17 @@ def fdtdz(
 
     pml_widths = (pml_widths[0] - 1, pml_widths[1] + 1)
 
+    if output_subvolume is not None:
+      # Unfortunately, because we selectively roll the Ez values only after the
+      # simulation, when using an output subvolume, we need an extra layer of
+      # values along z.
+      output_subvolume = (
+          (output_subvolume[0][1], output_subvolume[0][0],
+           zz - output_subvolume[1][2] - 1),
+          (output_subvolume[1][1], output_subvolume[1][0],
+           zz - output_subvolume[0][2]),
+      )
+
     try:
       out = fdtdz(
           epsilon,
@@ -316,7 +327,8 @@ def fdtdz(
           pml_widths,
           output_steps,
           use_reduced_precision,
-          launch_params
+          launch_params,
+          output_subvolume,
       )
     except ValueError as e:
       # Make a note that this occurred while doing the transform
@@ -329,7 +341,22 @@ def fdtdz(
     out = out[:, (1, 0, 2), ...]
     out = _flip_roll_component(
         out, component=2, splitaxis=1, flipaxis=4, scalez=-1)
-    return out
+    if output_subvolume is None:
+      return out
+    else:
+      # Need to eliminate the extra subvolume along z.
+      return out[..., :-1]
+
+    # # TODO: Remove.
+    # if output_subvolume is None:
+    #   return out
+    # else:
+    #   return out[:,
+    #              :,
+    #              output_subvolume[0][0]:output_subvolume[1][0],
+    #              output_subvolume[0][1]:output_subvolume[1][1],
+    #              output_subvolume[0][2]:output_subvolume[1][2]]
+    # return out
 
   out_start, out_stop, out_interval = output_steps
   out_num = len(range(out_start, out_stop, out_interval))
@@ -458,11 +485,26 @@ def fdtdz(
   out = fdtdz_impl(cbuffer, abslayer, srclayer, source_waveform, zcoeff,
                    **kwargs)
 
-  return out[:,
-             :,
-             _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
-             _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
-             :]
+  out = out[:,
+            :,
+            _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
+            _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
+            :]
+
+  # TODO: Remove.
+  if output_subvolume is None:
+    return out
+  else:
+    return out[:,
+               :,
+               output_subvolume[0][0]:output_subvolume[1][0],
+               output_subvolume[0][1]:output_subvolume[1][1],
+               output_subvolume[0][2]:output_subvolume[1][2]]
+  # return out[:,
+  #            :,
+  #            _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
+  #            _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
+  #            :]
 
 
 def fdtdz_impl(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
