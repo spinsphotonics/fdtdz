@@ -23,7 +23,7 @@ _NUM_PAD_CELLS = 4
 
 
 def _preset_launch_params(device_kind):
-  """Returns `(block, grid, spacing, cc)` parameters for `device_kind`."""
+  """Returns ``(block, grid, spacing, cc)`` parameters for ``device_kind``."""
   if device_kind == "Quadro RTX 4000":
     return ((2, 4), (6, 6), 2, (7, 5))
   elif device_kind == "Tesla T4":
@@ -34,14 +34,14 @@ def _preset_launch_params(device_kind):
 
 
 def _padded_domain_shape(shape, launch_params):
-  """Returns `(xx, yy) >= shape` compatible with `launch_params`."""
+  """Returns ``(xx, yy) >= shape`` compatible with ``launch_params``."""
   xx, yy = shape
   (bu, bv), (gu, gv), spacing, _ = launch_params
 
   # First, we need to make the domain large enough in the x-direction.
   #
   # This requires that the size of the overall diamond (spacing included) along
-  # the v-axis not be smaller than `xx` with initial padding of 4 on both
+  # the v-axis not be smaller than ``xx`` with initial padding of 4 on both
   # boundaries included.
   #
   xx = max(xx + 8, (2 * bv + spacing) * gv)
@@ -49,13 +49,13 @@ def _padded_domain_shape(shape, launch_params):
   # Second, we need to make the domain large enough in the y-direction.
   #
   # This requires that, at minimum, the total height of the diamond be less
-  # than or equal to `yy` with padding of 4 included on both boundaries.
+  # than or equal to ``yy`` with padding of 4 included on both boundaries.
   #
   yy = max(yy + 8, (2 * (bu * gu + bv * gv)))
 
-  # Third, we need to make `yy` traversable in an integer amount of scans.
+  # Third, we need to make ``yy`` traversable in an integer amount of scans.
   #
-  # This is satisfied as long as `yy` is equal to one u-length and a positive
+  # This is satisfied as long as ``yy`` is equal to one u-length and a positive
   # integer number of v-lengths of the diamond.
   #
   n = int(math.ceil((yy - (2 * bu * gu)) / (2 * bv * gv)))
@@ -65,14 +65,14 @@ def _padded_domain_shape(shape, launch_params):
 
 
 def _is_source_type(f, type):
-  """`True` iff source field `f` is of `type`."""
+  """``True`` iff source field ``f`` is of ``type``."""
   return ((type == "x" and f.ndim == 4 and f.shape[1] == 1) or
           (type == "y" and f.ndim == 4 and f.shape[2] == 1) or
           (type == "z" and f.ndim == 5 and f.shape[4] == 1))
 
 
 def _flip_roll_component(array, component, splitaxis, flipaxis, scalez=1.0):
-  """Flip around `slipaxis` and shift `component` of `splitaxis`."""
+  """Flip around ``slipaxis`` and shift ``component`` of ``splitaxis``."""
   array = jnp.flip(array, axis=flipaxis)
   splits = jnp.split(array, array.shape[splitaxis], axis=splitaxis)
   splits[component] = scalez * jnp.roll(splits[component], -1, axis=flipaxis)
@@ -80,7 +80,7 @@ def _flip_roll_component(array, component, splitaxis, flipaxis, scalez=1.0):
 
 
 def _flip_roll(array, axis):
-  """Flip on all axes, shift on `axis`."""
+  """Flip on all axes, shift on ``axis``."""
   return jnp.roll(jnp.flip(array, axis=range(array.ndim)), -1, axis=axis)
 
 
@@ -101,142 +101,137 @@ def fdtdz(
 ):
   """Execute a FDTD simulation.
 
-  `fdtd-z` is an implementation of the finite-difference time-domain (FDTD)
+  ``fdtd-z`` is an implementation of the finite-difference time-domain (FDTD)
   method that is efficiently mapped to the GPU via a systolic update scheme
-  [1]. This function exposes, as a JAX primitive, a relatively low-level API
+  [#whitepaper_ref]_. This function exposes, as a JAX primitive, a relatively low-level API
   to the underlying CUDA kernel.
 
-  `fdtd-z` targets nanophotonic applications with a heavy prioritization on
+  ``fdtd-z`` targets nanophotonic applications with a heavy prioritization on
   simulation throughput, as insufficient throughput is currently the
   bottleneck in many workflows (such as nanophotonic inverse design). As such,
   the flexibility and features of the engine have been kept to a bare
   minimum in the name of performance:
 
-    - Reduced-precision mode is available and recommended which utilizes
-      16-bit floating point internally (input and output arrays are always
-      at single-precision) and allows for ~2 times larger z-extent. Requires
-      (Nvidia) GPUs of compute capability >= 6.0.
+  - Reduced-precision mode is available and recommended which utilizes
+    16-bit floating point internally (input and output arrays are always
+    at single-precision) and allows for ~2 times larger z-extent. Requires
+    (Nvidia) GPUs of compute capability >= 6.0.
 
-    - Z-extent (`zz`) of the simulation domain is fixed to a specific value to
-      allow for a natural mapping to the 32 threads/warp architecture of
-      Nvidia GPUs. The required value of `zz` is given by either `128 - p` or
-      `64 - p` for the cases of reduced precision or full precision
-      respectively, where `p` is the total number of PML layers for the
-      simulation.
+  - Z-extent (``zz``) of the simulation domain is fixed to a specific value to
+    allow for a natural mapping to the 32 threads/warp architecture of
+    Nvidia GPUs. The required value of ``zz`` is given by either ``128 - p`` or
+    ``64 - p`` for the cases of reduced precision or full precision
+    respectively, where ``p`` is the total number of PML layers for the
+    simulation.
 
-    - PML boundary conditions [2] are limited to the z-direction, adiabatic
-      aborbing boundaries [3] must be used in the x- and y-directions.
+  - PML boundary conditions [#cpml_ref]_ are limited to the z-direction, adiabatic
+    aborbing boundaries [#absorber_ref]_ must be used in the x- and y-directions.
 
-    - Absorption (apart from absorbing boundary conditions) and dispersion are
-      not implemented. The simulated structure must consist of a real-valued
-      permittivity that depends only on the E-field component and spatial
-      location.
+  - Absorption (apart from absorbing boundary conditions) and dispersion are
+    not implemented. The simulated structure must consist of a real-valued
+    permittivity that depends only on the E-field component and spatial
+    location.
 
-    - The permeability is fixed at a value of `1` everywhere in the simulation
-      domain.
+  - The permeability is fixed at a value of ``1`` everywhere in the simulation
+    domain.
 
-    - Only current sources as hyperplanes along the y- and z-axes are
-      implemented.
+  - Only current sources as hyperplanes along the y- and z-axes are
+    implemented.
 
-  `fdtd-z` uses a "dimensionless" system [4] where the permittivity and
+  ``fdtd-z`` uses a "dimensionless" system [#meep_ref]_ where the permittivity and
   permeability of vacuum (and therefore the speed of light), as well as the size
-  of the Yee cell are all set to a (dimensionless) value of `1` (although the
+  of the Yee cell are all set to a (dimensionless) value of ``1`` (although the
   size of the cell along the z-axis can be varied).
 
-  [1] https://github.com/spinsphotonics/fdtdz/blob/main/paper/paper.pdf
-  [2] Roden, J. Alan, and Stephen D. Gedney. "Convolution PML (CPML): An
-      efficient FDTD implementation of the CFS–PML for arbitrary media."
-      Microwave and optical technology letters 27.5 (2000): 334-339.
-  [3] Oskooi, Ardavan, and Steven G. Johnson. "Distinguishing correct from
-      incorrect PML proposals and a corrected unsplit PML for anisotropic,
-      dispersive media." Journal of Computational Physics 230.7 (2011):
-      2369-2377.
-  [4] Oskooi, Ardavan F., et al. "MEEP: A flexible free-software package for
-      electromagnetic simulations by the FDTD method." Computer Physics
-      Communications 181.3 (2010): 687-702.
+  .. [#whitepaper_ref]  Lu, Jesse, and Jelena Vuckovic. "fdtd-z: A systolic scheme for GPU-accelerated nanophotonic simulation." https://github.com/spinsphotonics/fdtdz/blob/main/paper/paper.pdf
+  .. [#cpml_ref]  Roden, J. Alan, and Stephen D. Gedney. "Convolution PML
+     (CPML): An efficient FDTD implementation of the CFS–PML for arbitrary
+     media." Microwave and optical technology letters 27.5 (2000): 334-339.
+  .. [#absorber_ref]  Oskooi, Ardavan, and Steven G. Johnson. "Distinguishing correct from incorrect PML proposals and a corrected unsplit PML for anisotropic, dispersive media." Journal of Computational Physics 230.7 (2011): 2369-2377.
+  .. [#meep_ref]  Oskooi, Ardavan F., et al. "MEEP: A flexible free-software package for electromagnetic simulations by the FDTD method." Computer Physics Communications 181.3 (2010): 687-702.
 
   Args:
-    epsilon: `(3, xx, yy, zz)`-shaped array of floats representing the
-      permittivity values at the `Ex`, `Ey`, and `Ez` nodes of the Yee cell
+    epsilon: ``(3, xx, yy, zz)``-shaped array of floats representing the
+      permittivity values at the ``Ex``, ``Ey``, and ``Ez`` nodes of the Yee cell
       respectively. We use the convention that these components are located at
-      `(0.5, 0, 0)`, `(0, 0.5, 0)`, and `(0, 0, 0.5)` respectively, for a Yee
+      ``(0.5, 0, 0)``, ``(0, 0.5, 0)``, and ``(0, 0, 0.5)`` respectively, for a Yee
       cell of side-length 1.
     dt: Scalar float representing the amount of time elapsed in one update step.
-    source_field: An array of shape `(2, 1, yy, zz)`, `(2, xx, 1, zz)`, or
-      `(2, 2, xx, yy, 1)`-shaped array for a source at
-      `x = source_position`, `y = source_position`, or `z = source_position`
-      respectively. The `(2, 1, yy, zz)` source features `Ey` and `Ez`
-      components in that order, while the `(2, xx, 1, zz)` source features `Ex`
-      and `Ez` components in that order. The `(2, 2, xx, yy, 1)` allows for the
-      specification of two separate source fields at `[0, :, :, :, :]` and
-      `[1, :, :, :, :]` which each contain `Ex` and `Ey` components in that
+    source_field: An array of shape ``(2, 1, yy, zz)``, ``(2, xx, 1, zz)``, or
+      ``(2, 2, xx, yy, 1)``-shaped array for a source at
+      ``x = source_position``, ``y = source_position``, or ``z = source_position``
+      respectively. The ``(2, 1, yy, zz)`` source features ``Ey`` and ``Ez``
+      components in that order, while the ``(2, xx, 1, zz)`` source features ``Ex``
+      and ``Ez`` components in that order. The ``(2, 2, xx, yy, 1)`` allows for the
+      specification of two separate source fields at ``[0, :, :, :, :]`` and
+      ``[1, :, :, :, :]`` which each contain ``Ex`` and ``Ey`` components in that
       order.
-    source_waveform: `(tt, 2)`-shaped array of floats denoting the temporal
-      variation to apply to the each of the source fields, where `tt` is the
+    source_waveform: ``(tt, 2)``-shaped array of floats denoting the temporal
+      variation to apply to the each of the source fields, where ``tt`` is the
       total number of update steps needed (note that the first update occurs at
-      step `0`). Specifically, the subarray at `(tt, i)` applies a temporal
-      variation to the `(i, 2, xx, yy. 1)` subarray of a source at
-      `z = source_position`, while for a source at `x = source_position` or
-      `y = source_position` the temporal variation is applied to the source
-      field at `source_position - i`.
+      step ``0``). Specifically, the subarray at ``(tt, i)`` applies a temporal
+      variation to the ``(i, 2, xx, yy. 1)`` subarray of a source at
+      ``z = source_position``, while for a source at ``x = source_position`` or
+      ``y = source_position`` the temporal variation is applied to the source
+      field at ``source_position - i``.
     source_position: integer representing the position of the source along
-      either the y- or z-axes. For the case of a source at `y = source_position`
+      either the y- or z-axes. For the case of a source at ``y = source_position``
       the source field is applied (with the corresponding waveform) at both
-      `y = source_position` and `y = source_position - 1`, with the additional
-      performance constraint that `source_position` must be even.
-    absorption_mask: `(3, xx, yy)`-shaped array of floats representing a
+      ``y = source_position`` and ``y = source_position - 1``, with the additional
+      performance constraint that ``source_position`` must be even.
+    absorption_mask: ``(3, xx, yy)``-shaped array of floats representing a
       z-invariant conductivity intended to allow for adiabatic absorbing
       boundary conditions along the x- and y-axes according to
-      `conductivity(x, y, z) = aborption_mask(x, y) * epsilon(x, y, z)`
-      for the `Ex`, `Ey`, and `Ez` component respectively.
-    pml_kappa: `(zz, 2)`-shaped array of floats denoting the distance along the
+      ``conductivity(x, y, z) = aborption_mask(x, y) * epsilon(x, y, z)``
+      for the ``Ex``, ``Ey``, and ``Ez`` component respectively.
+    pml_kappa: ``(zz, 2)``-shaped array of floats denoting the distance along the
       z-axis between adjacent Yee cells. This is primarily intended to be used
       as a stretching parameter for the PML, but equivalently also determines
       the unit cell length along the z-axis throughout the simulation domain.
-      Specifically, `(zz, 0)` represents the distance between successive layers
-      of `Ex`, `Ey`, and `Hz` nodes, while `(zz, 1)` represents the distance
-      between layers of `Hx`, `Hy`, and `Ez` nodes.
-    pml_sigma: `(zz, 2)`-shaped array of floats for the conductivity of the PML
-      region, where `(zz, 0)` and `(zz, 1)` are the values at the
-      (`Ex`, `Ey`, `Hz`) and (`Hx`, `Hy`, `Ez`) layers respectively. Must be set
-      to `0` outside of the PML regions.
-    pml_alpha: `(zz, 2)`-shaped array of floats similar to `pml_sigma`. Must
-      also be set to `0` outside of the PML regions.
-    pml_widths: `(bot, top)` integers specifying the number of cells which
+      Specifically, ``(zz, 0)`` represents the distance between successive layers
+      of ``Ex``, ``Ey``, and ``Hz`` nodes, while ``(zz, 1)`` represents the distance
+      between layers of ``Hx``, ``Hy``, and ``Ez`` nodes.
+    pml_sigma: ``(zz, 2)``-shaped array of floats for the conductivity of the PML
+      region, where ``(zz, 0)`` and ``(zz, 1)`` are the values at the
+      (``Ex``, ``Ey``, ``Hz``) and (``Hx``, ``Hy``, ``Ez``) layers respectively. Must be set
+      to ``0`` outside of the PML regions.
+    pml_alpha: ``(zz, 2)``-shaped array of floats similar to ``pml_sigma``. Must
+      also be set to ``0`` outside of the PML regions.
+    pml_widths: ``(bot, top)`` integers specifying the number of cells which
       are to be designated as PML layers at the bottom and top of the
       simulation respectively. For performance reasons, the total number of PML
-      layers used in the simulation (`bot + top`) is required to be a multiple
-      of `4`.
-    output_steps: `(start, stop, interval)` tuple of integers denoting the
+      layers used in the simulation (``bot + top``) is required to be a multiple
+      of ``4``.
+    output_steps: ``(start, stop, interval)`` tuple of integers denoting the
       update step at which to start recording output fields, the number of
       update steps separating successive output fields, and the step at which
       to stop recording (not included).
-    use_reduced_precision: If `True`, uses 16-bit (IEEE 754) precision for the
+    use_reduced_precision: If ``True``, uses 16-bit (IEEE 754) precision for the
       simulation which allows for a maximum of 128 cells along the z-axis.
       Otherwise, uses 32-bit single-precision with a maximum of 64 cells
       along the z-axis. Both inputs and results are always expected as 32-bit
       arrays.
     launch_params: Integers as an object in the form of
-      `((blocku, blockv), (gridu, gridv), spacing, (cc_major, cc_minor))`,
-      specifying the structure of the systolic update to use on the GPU.
-        - `(blocku, blockv)` determines the layout of warps in the u- and
-          v-directions within a block and should be `(2, 4)` or `(4, 2)`.
-        - `(gridu, gridv)` specify the layout of blocks on the GPU and must be
-          equal to or less than the number of streaming multiprocessors on the
-          GPU because of the need for grid-wide synchronization.
-        - `spacing` controls the number of buffers used between each block and
-          its downstream neighbor and should be tuned to balance between
-          reducing grid synchronization overhead and staying within the limits
-          of the L2 cache.
-        - `(cc_major, cc_minor)` major and minor compute capability of the
-          device. Used to determine which precompiled kernel to use. Currently
-          allowed values are `(3, 7)`, `(6, 0)`, `(7, 0)`, `(7, 5)`, and
-          `(8, 0)`. Recommended to use the latest compute capability kernel
-          possible that does not exceed the compute capability of the device.
+      ``((blocku, blockv), (gridu, gridv), spacing, (cc_major, cc_minor))``,
+      specifying the structure of the systolic update to use on the GPU where
+      ``(blocku, blockv)`` determines the layout of warps in the u- and
+      v-directions within a block and should be ``(2, 4)`` or ``(4, 2)``;
+      ``(gridu, gridv)`` specify the layout of blocks on the GPU and must be
+      equal to or less than the number of streaming multiprocessors on the
+      GPU because of the need for grid-wide synchronization;
+      ``spacing`` controls the number of buffers used between each block and
+      its downstream neighbor and should be tuned to balance between
+      reducing grid synchronization overhead and staying within the limits
+      of the L2 cache; and
+      ``(cc_major, cc_minor)`` major and minor compute capability of the
+      device. Used to determine which precompiled kernel to use. Currently
+      allowed values are ``(3, 7)``, ``(6, 0)``, ``(7, 0)``, ``(7, 5)``, and
+      ``(8, 0)``. Recommended to use the latest compute capability kernel
+      possible that does not exceed the compute capability of the device.
 
   Returns:
-    `(n, 3, xx, yy, zz)` array of floats representing `n` output fields, where
-    each output field consists of the values of the `Ex`, `Ey`, and `Ez` node
+    ``(n, 3, xx, yy, zz)`` array of floats representing ``n`` output fields, where
+    each output field consists of the values of the ``Ex``, ``Ey``, and ``Ez`` node
     (in that order) over the simulation domain, at a specific update step.
 
   """
@@ -276,7 +271,7 @@ def fdtdz(
         f"Invalid source_position, must be within simulation domain but got "
         f"a value of {source_position}.")
 
-  # Rotate about the `(x, y) = (1, 1)` axis to transform into a y-plane source.
+  # Rotate about the ``(x, y) = (1, 1)`` axis to transform into a y-plane source.
   if _is_source_type(source_field, "x"):
     epsilon = jnp.transpose(epsilon, axes=(0, 2, 1, 3))
     epsilon = epsilon[(1, 0, 2), ...]
@@ -316,7 +311,7 @@ def fdtdz(
       # Make a note that this occurred while doing the transform
       raise ValueError(
           "Note that the exception occurred while running the transformed "
-          "problem for a source at `x = source_position`.") from e
+          "problem for a source at ``x = source_position``.") from e
 
     # Un-rotate outputs.
     out = jnp.transpose(out, axes=(0, 1, 3, 2, 4))
@@ -353,8 +348,8 @@ def fdtdz(
 
   if not (block[0] * grid[0] <= block[1] * grid[1]):
     raise ValueError(
-        f"launch_params must have `(blocku, blockv)` and `(gridu, gridv)` "
-        "be \"v-dominant\" in that `blocku * gridu <= blockv * gridv` must be "
+        f"launch_params must have ``(blocku, blockv)`` and ``(gridu, gridv)`` "
+        "be \"v-dominant\" in that ``blocku * gridu <= blockv * gridv`` must be "
         "satisfied.")
 
   if compute_capability not in ((3, 7), (6, 0), (7, 0), (7, 5), (8, 0)):
@@ -364,7 +359,7 @@ def fdtdz(
 
   # Once again, for performance reasons, we require that there be 4 cells of
   # padding in the x- and y-directions, and that the actual simulated areas
-  # domain shape abide by rules related to `launch_params`.
+  # domain shape abide by rules related to ``launch_params``.
   pxx, pyy = _padded_domain_shape((xx, yy), launch_params)
 
   denom = 1 / dt + absorption_mask / 2
@@ -463,7 +458,7 @@ def fdtdz_impl(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
   """Low-level API to the simulation kernel."""
   buffer_, cbuffer_, mask_, src_, output_ = _fdtdz_prim.bind(
       cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs)
-  # Only return `output_`, since all other "*_" are temporary arrays needed
+  # Only return ``output_``, since all other "*_" are temporary arrays needed
   # inside the simulation kernel only.
   return output_
 
@@ -472,7 +467,7 @@ def _internal_shapes(xx, yy, zz, **kwargs):
   """Shapes of temporary (and output) arrays needed during the simulation.
 
   NOTE: Spatial dimensions correspond to the internal dimensions needed by the
-  kernel, _not_ to those provided in the more user-friendly `fdtdz()`.
+  kernel, _not_ to those provided in the more user-friendly ``fdtdz()``.
 
   """
   return {
@@ -485,7 +480,7 @@ def _internal_shapes(xx, yy, zz, **kwargs):
 
 
 def _fdtdz_abstract(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
-  # Assume `cbuffer` to be of shape `(3, xx, yy, zz)`.
+  # Assume ``cbuffer`` to be of shape ``(3, xx, yy, zz)``.
   (_, xx, yy, zz) = cbuffer.shape
   shapes = _internal_shapes(xx, yy, zz, **kwargs)
   return (
