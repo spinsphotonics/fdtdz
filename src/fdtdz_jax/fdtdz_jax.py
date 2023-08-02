@@ -6,9 +6,10 @@ import os
 import sys
 
 import numpy as np
+import jax
 from jax import core, dtypes, lax
 from jax import numpy as jnp
-from jax.abstract_arrays import ShapedArray
+from jax.core import ShapedArray
 from jax.interpreters import ad, batching, mlir, xla
 from jax.lib import xla_client
 from jaxlib.hlo_helpers import custom_call
@@ -84,6 +85,15 @@ def _flip_roll(array, axis):
   return jnp.roll(jnp.flip(array, axis=range(array.ndim)), -1, axis=axis)
 
 
+@functools.partial(jax.jit, static_argnames=[
+    "dt",
+    "source_position",
+    "pml_widths",
+    "output_steps",
+    "use_reduced_precision",
+    "launch_params",
+    "output_subvolume",
+])
 def fdtdz(
     epsilon,
     dt,
@@ -98,6 +108,7 @@ def fdtdz(
     output_steps,
     use_reduced_precision,
     launch_params,
+    output_subvolume=None,
 ):
   """Execute a FDTD simulation.
 
@@ -289,7 +300,7 @@ def fdtdz(
     pml_sigma = _flip_roll(pml_sigma, axis=0)
     pml_alpha = _flip_roll(pml_alpha, axis=0)
 
-    pml_widths = [pml_widths[0] - 1, pml_widths[1] + 1]
+    pml_widths = (pml_widths[0] - 1, pml_widths[1] + 1)
 
     try:
       out = fdtdz(
@@ -371,8 +382,8 @@ def fdtdz(
   pml_z = 1 / pml_kappa
   # Avoid division-by-zero.
   pml_a_denom = pml_sigma * pml_kappa + pml_alpha * pml_kappa**2
-  pml_a = ((pml_b - 1) * np.where(pml_a_denom == 0, 1, pml_sigma) /
-           np.where(pml_a_denom == 0, pml_kappa, pml_a_denom))
+  pml_a = ((pml_b - 1) * jnp.where(pml_a_denom == 0, 1, pml_sigma) /
+           jnp.where(pml_a_denom == 0, pml_kappa, pml_a_denom))
 
   npml = total_pml_width // (4 if use_reduced_precision else 2)
 
