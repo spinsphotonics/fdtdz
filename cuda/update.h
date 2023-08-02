@@ -330,14 +330,17 @@ __device__ void AddSrc(Cell<T> &cell, const slice::ZSrc<T> &zsrc,
 template <typename T, typename T1>
 __device__ void WriteOutput(Cell<T> &cell, XYT domainpos, int threadpos,
                             T1 *outptr, int zshift, RunShape rs, bool isaux) {
-  if (diamond::IsDiamondCompletelyInDomain(XY(domainpos.x, domainpos.y),
-                                           rs.domain) &&
+  if (
+      // diamond::IsDiamondCompletelyInDomain(XY(domainpos.x, domainpos.y),
+      //                                      rs.domain) &&
+      diamond::IsDiamondCompletelyInSubdomainXY(XY(domainpos.x, domainpos.y),
+                                                rs.out.x, rs.out.y) &&
       domainpos.t >= rs.out.start &&                               //
       domainpos.t < rs.out.start + rs.out.num * rs.out.interval && //
       (domainpos.t - rs.out.start) % rs.out.interval == 0) {
     int outindex = (domainpos.t - rs.out.start) / rs.out.interval;
     field::WriteCell(cell, outptr, XY(domainpos.x, domainpos.y), outindex,
-                     threadpos, rs.domain, rs.pml.n, zshift, isaux);
+                     threadpos, rs.domain, rs.pml.n, zshift, isaux, rs.out.z);
   }
 }
 

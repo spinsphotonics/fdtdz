@@ -48,10 +48,9 @@ void BenchmarkKernel(kernel_precompiled::PreCompiledKernelType type,
   // Print out results;
   std::cout << tcups << "/" << actual_tcups << " (raw/adj) TCUPS at " //
             << minseconds / numsteps * 1e6 << " us/step ("            //
-            << minseconds * 1e3
-            << " ms, " //
-            // << numsteps << " steps, "                                 //
-            << testutils::NumRegisters(kernel) << " regs)\n";
+            << minseconds * 1e3 << " ms, "                            //
+            << numsteps << " steps)\n";                               //
+  // << testutils::NumRegisters(kernel) << " regs)\n";
 }
 
 void SpacingBenchmark(int timesteps, int repeats, std::vector<int> spacings,

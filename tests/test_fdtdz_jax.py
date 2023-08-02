@@ -53,7 +53,7 @@ def _pml_sigma_values(pml_widths, zz, ln_R=16.0, m=4.0):
 
 def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
               abs_smoothness, pml_widths, output_steps, use_reduced_precision,
-              output_subvolume=None):
+              subvolume=None):
   """Run a simple continuous-wave dipole-source simulation."""
   zz = (128 if use_reduced_precision else 64) - sum(pml_widths)
   epsilon = np.ones((3, xx, yy, zz), np.float32)
@@ -98,10 +98,10 @@ def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
       output_steps,
       use_reduced_precision,
       launch_params=jax.devices()[0].device_kind,
-      output_subvolume=output_subvolume,
+      subvolume=subvolume,
   )
 
-  if output_subvolume is None:
+  if subvolume is None:
     # Measuring error is only relevant for the full output domain.
     err = fdtdz_jax.residual(
         2 * np.pi / src_wavelength,
@@ -149,8 +149,8 @@ def test_point_source(xx, yy, tt, dt, src_type, src_wavelength,
         pml_widths=(20, 20),
         output_steps=(tt - quarter_period - 1, tt, quarter_period),
         use_reduced_precision=use_reduced_precision,
-        output_subvolume=(((110, 120, 30), (115, 130, 31))
-                          if use_subvolume else None),
+        subvolume=(((110, 120, 30), (115, 130, 31))
+                   if use_subvolume else None),
     )
 
   full_fields, err = mysim()

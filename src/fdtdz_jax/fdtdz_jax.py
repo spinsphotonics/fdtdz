@@ -92,7 +92,7 @@ def _flip_roll(array, axis):
     "output_steps",
     "use_reduced_precision",
     "launch_params",
-    "output_subvolume",
+    "subvolume",
 ])
 def fdtdz(
     epsilon,
@@ -108,7 +108,7 @@ def fdtdz(
     output_steps,
     use_reduced_precision,
     launch_params,
-    output_subvolume=None,
+    subvolume=None,
 ):
   """Execute a FDTD simulation.
 
@@ -302,15 +302,13 @@ def fdtdz(
 
     pml_widths = (pml_widths[0] - 1, pml_widths[1] + 1)
 
-    if output_subvolume is not None:
+    if subvolume is not None:
       # Unfortunately, because we selectively roll the Ez values only after the
       # simulation, when using an output subvolume, we need an extra layer of
       # values along z.
-      output_subvolume = (
-          (output_subvolume[0][1], output_subvolume[0][0],
-           zz - output_subvolume[1][2] - 1),
-          (output_subvolume[1][1], output_subvolume[1][0],
-           zz - output_subvolume[0][2]),
+      subvolume = (
+          (subvolume[0][1], subvolume[0][0], zz - subvolume[1][2] - 1),
+          (subvolume[1][1], subvolume[1][0], zz - subvolume[0][2]),
       )
 
     try:
@@ -328,7 +326,7 @@ def fdtdz(
           output_steps,
           use_reduced_precision,
           launch_params,
-          output_subvolume,
+          subvolume,
       )
     except ValueError as e:
       # Make a note that this occurred while doing the transform
@@ -341,21 +339,21 @@ def fdtdz(
     out = out[:, (1, 0, 2), ...]
     out = _flip_roll_component(
         out, component=2, splitaxis=1, flipaxis=4, scalez=-1)
-    if output_subvolume is None:
+    if subvolume is None:
       return out
     else:
       # Need to eliminate the extra subvolume along z.
       return out[..., :-1]
 
     # # TODO: Remove.
-    # if output_subvolume is None:
+    # if subvolume is None:
     #   return out
     # else:
     #   return out[:,
     #              :,
-    #              output_subvolume[0][0]:output_subvolume[1][0],
-    #              output_subvolume[0][1]:output_subvolume[1][1],
-    #              output_subvolume[0][2]:output_subvolume[1][2]]
+    #              subvolume[0][0]:subvolume[1][0],
+    #              subvolume[0][1]:subvolume[1][1],
+    #              subvolume[0][2]:subvolume[1][2]]
     # return out
 
   out_start, out_stop, out_interval = output_steps
@@ -424,8 +422,8 @@ def fdtdz(
   dirname = os.path.join(os.path.dirname(sys.modules[__name__].__file__),
                          "ptx")
 
-  if output_subvolume is None:
-    output_subvolume = ((0, 0, 0), (xx, yy, zz))
+  if subvolume is None:
+    subvolume = ((0, 0, 0), (xx, yy, zz))
 
   kwargs = {
       "hmat": dt,
@@ -449,7 +447,7 @@ def fdtdz(
       "withshared": True,
       "withupdate": True,
       "use_reduced_precision": use_reduced_precision,
-      "output_subvolume": output_subvolume,
+      "subvolume": subvolume,
   }
 
   cbuffer = jnp.pad(cbuffer,
@@ -496,14 +494,14 @@ def fdtdz(
             :]
 
   # TODO: Remove or change or something.
-  if output_subvolume is None:
+  if subvolume is None:
     return out
   else:
     return out[:,
                :,
-               output_subvolume[0][0]:output_subvolume[1][0],
-               output_subvolume[0][1]:output_subvolume[1][1],
-               output_subvolume[0][2]:output_subvolume[1][2]]
+               subvolume[0][0]:subvolume[1][0],
+               subvolume[0][1]:subvolume[1][1],
+               subvolume[0][2]:subvolume[1][2]]
   # return out[:,
   #            :,
   #            _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
@@ -574,12 +572,12 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
       kwargs["srcpos"],
       kwargs["outstart"],
       kwargs["outinterval"],
-      kwargs["output_subvolume"][0][0],
-      kwargs["output_subvolume"][1][0],
-      kwargs["output_subvolume"][0][1],
-      kwargs["output_subvolume"][1][1],
-      kwargs["output_subvolume"][0][2],
-      kwargs["output_subvolume"][1][2],
+      kwargs["subvolume"][0][0],
+      kwargs["subvolume"][1][0],
+      kwargs["subvolume"][0][1],
+      kwargs["subvolume"][1][1],
+      kwargs["subvolume"][0][2],
+      kwargs["subvolume"][1][2],
       kwargs["outnum"],
       kwargs["dirname"],
   )

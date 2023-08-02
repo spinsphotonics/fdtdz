@@ -58,9 +58,13 @@ void PrintField2(T *ptr, int i, Xyz xyz, reference::SimParams<T> sp) {
   }
 }
 
-template <typename T, typename T1, int Npml> struct PointSim2 {
-  PointSim2(T1 mat0, Node srcnode, int timestep, int nlo, int nhi,
-            RunShape::Src::Type srctype = RunShape::Src::ZSLICE)
+template <typename T, typename T1, int Npml> struct PointSim {
+  PointSim(T1 mat0, Node srcnode, int timestep, int nlo, int nhi,
+           RunShape::Src::Type srctype = RunShape::Src::ZSLICE,
+           RunShape::Out::Range xrange = RunShape::Out::Range(0, 16),
+           RunShape::Out::Range yrange = RunShape::Out::Range(0, 16),
+           RunShape::Out::Range zrange =
+               RunShape::Out::Range(0, diamond::ExtZz<T>(Npml)))
       : rs(/*block=*/UV(2, 2),
            /*grid=*/UV(2, 2),
            /*spacing=*/2,
@@ -76,10 +80,8 @@ template <typename T, typename T1, int Npml> struct PointSim2 {
                              : srcnode.j + (srcnode.j % 2)),
            /*out=*/
            RunShape::Out(
-               /*start=*/timestep, /*interval=*/1, /*num=*/1,
-               /*x=*/RunShape::Out::Range(0, 16),
-               /*y=*/RunShape::Out::Range(0, 16),
-               /*z=*/RunShape::Out::Range(0, diamond::ExtZz<T>(Npml)))),
+               /*start=*/timestep, /*interval=*/1, /*num=*/1, xrange, yrange,
+               zrange)),
         alloc(rs.domain.x, rs.domain.y, diamond::ExtZz<T>(Npml), timestep, mat0,
               srcnode),
         sp(alloc.Params()), srcnode_(srcnode), timestep_(timestep), nlo_(nlo),
@@ -134,9 +136,9 @@ private:
 
 TEST(Verification, PointSource) {
   Node srcnode(7, 7, 17, E, X);
-  PointSim2<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode,
-                                          /*timestep=*/8,
-                                          /*nlo=*/0, /*nhi=*/0);
+  PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode,
+                                         /*timestep=*/8,
+                                         /*nlo=*/0, /*nhi=*/0);
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.0f;
   sim.SimAndTest();
@@ -144,9 +146,9 @@ TEST(Verification, PointSource) {
 
 TEST(Verification, PointSourceWithModifications) {
   Node srcnode(7, 7, 16, E, Y);
-  PointSim2<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode,
-                                          /*timestep=*/8,
-                                          /*nlo=*/0, /*nhi=*/0);
+  PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode,
+                                         /*timestep=*/8,
+                                         /*nlo=*/0, /*nhi=*/0);
   auto sp = sim.SimParams();
   sp.wf1[0] = 1.0f;
   sp.abs[FieldIndex(Node(6, 6, 0, E, X), sp.x, sp.y)] = 2.0f;
@@ -163,9 +165,9 @@ TEST(Verification, PointSourceWithPml) {
   constexpr const int nlo = 5;
   constexpr const int nhi = 7;
   Node srcnode(7, 7, 5, E, X);
-  PointSim2<float, float, /*Npml=*/(nlo + nhi) / Nz> sim(/*mat0=*/1.0f, srcnode,
-                                                         /*timestep=*/4, nlo,
-                                                         nhi);
+  PointSim<float, float, /*Npml=*/(nlo + nhi) / Nz> sim(/*mat0=*/1.0f, srcnode,
+                                                        /*timestep=*/4, nlo,
+                                                        nhi);
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.0f;
 
@@ -181,9 +183,9 @@ TEST(Verification, PointSourceWithPml) {
 
 TEST(Verification, FloatSim) {
   Node srcnode(7, 7, 17, E, X);
-  PointSim2<float, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
-                                          /*timestep=*/8, /*nlo=*/0,
-                                          /*nhi=*/0);
+  PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
+                                         /*timestep=*/8, /*nlo=*/0,
+                                         /*nhi=*/0);
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.5f;
   sim.SimAndTest();
@@ -193,9 +195,9 @@ TEST(Verification, FloatSim) {
 // fp16 (half2) and fp32 (float) values after timestep 4.
 TEST(Verification, Half2Sim) {
   Node srcnode(7, 7, 15, E, Y);
-  PointSim2<half2, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
-                                          /*timestep=*/4, /*nlo=*/0,
-                                          /*nhi=*/0);
+  PointSim<half2, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
+                                         /*timestep=*/4, /*nlo=*/0,
+                                         /*nhi=*/0);
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.5f;
   sim.SimAndTest();
@@ -203,9 +205,9 @@ TEST(Verification, Half2Sim) {
 
 TEST(Verification, Half2WithModifications) {
   Node srcnode(7, 7, 16, E, Y);
-  PointSim2<half2, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
-                                          /*timestep=*/4, /*nlo=*/0,
-                                          /*nhi=*/0);
+  PointSim<half2, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
+                                         /*timestep=*/4, /*nlo=*/0,
+                                         /*nhi=*/0);
   auto sp = sim.SimParams();
   sp.wf1[0] = 0.5f;
   sp.abs[FieldIndex(Node(6, 6, 0, E, X), sp.x, sp.y)] = 2.0f;
@@ -219,7 +221,7 @@ TEST(Verification, Half2WithPml) {
   constexpr const int nlo = 12;
   constexpr const int nhi = 12;
   Node srcnode(7, 7, 10, E, Y); // Completely in bottom pml.
-  PointSim2<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
+  PointSim<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
       /*mat0=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi);
   auto sp = sim.SimParams();
   sp.wf0[0] = 0.5f;
@@ -237,10 +239,10 @@ TEST(Verification, Half2WithPml) {
 TEST(Verification, PointSourceYSliceX) {
   const Node srcnode(6, 6, 17, E, X);
   const int timestep = 8;
-  PointSim2<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
-                                          /*nlo=*/0,
-                                          /*nhi=*/0,
-                                          /*srctype=*/RunShape::Src::YSLICE);
+  PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
+                                         /*nlo=*/0,
+                                         /*nhi=*/0,
+                                         /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
   for (int t = 0; t < timestep; ++t)
     sp.wf0[t] = 1.0f;
@@ -250,10 +252,10 @@ TEST(Verification, PointSourceYSliceX) {
 TEST(Verification, PointSourceYSliceXAlt) {
   const Node srcnode(6, 5, 17, E, X);
   const int timestep = 8;
-  PointSim2<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
-                                          /*nlo=*/0,
-                                          /*nhi=*/0,
-                                          /*srctype=*/RunShape::Src::YSLICE);
+  PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
+                                         /*nlo=*/0,
+                                         /*nhi=*/0,
+                                         /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
   for (int t = 0; t <= timestep; ++t)
     sp.wf1[t] = 1.0f;
@@ -263,10 +265,10 @@ TEST(Verification, PointSourceYSliceXAlt) {
 TEST(Verification, PointSourceYSliceZAlt) {
   const Node srcnode(6, 5, 17, E, Z);
   const int timestep = 8;
-  PointSim2<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
-                                          /*nlo=*/0,
-                                          /*nhi=*/0,
-                                          /*srctype=*/RunShape::Src::YSLICE);
+  PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
+                                         /*nlo=*/0,
+                                         /*nhi=*/0,
+                                         /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
   for (int t = 0; t <= timestep; ++t)
     sp.wf1[t] = 1.0f;
@@ -276,10 +278,10 @@ TEST(Verification, PointSourceYSliceZAlt) {
 TEST(Verification, PointSourceYSliceZ) {
   const Node srcnode(6, 6, 17, E, Z);
   const int timestep = 8;
-  PointSim2<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
-                                          /*nlo=*/0,
-                                          /*nhi=*/0,
-                                          /*srctype=*/RunShape::Src::YSLICE);
+  PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode, timestep,
+                                         /*nlo=*/0,
+                                         /*nhi=*/0,
+                                         /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
   for (int t = 0; t <= timestep; ++t)
     sp.wf0[t] = 1.0f;
@@ -290,7 +292,7 @@ TEST(Verification, YSrcWithPml) {
   constexpr const int nlo = 12;
   constexpr const int nhi = 2;
   Node srcnode(10, 6, 10, E, X); // Completely in bottom pml.
-  PointSim2<float, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<float>()> sim(
+  PointSim<float, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<float>()> sim(
       /*mat0=*/0.5f, srcnode, /*timestep=*/4, nlo, nhi,
       /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
@@ -310,7 +312,7 @@ TEST(Verification, YSrcHalf2WithPml) {
   constexpr const int nlo = 12;
   constexpr const int nhi = 12;
   Node srcnode(10, 6, 10, E, X); // Completely in bottom pml.
-  PointSim2<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
+  PointSim<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
       /*mat0=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi,
       /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
@@ -339,8 +341,8 @@ T1 EnergyAtTimestep(int timestep, RunShape::Src::Type srctype) {
   constexpr const int nhi = 10;
   constexpr const int npml = (nlo + nhi) / diamond::EffNz<T>();
   Node srcnode(8, 8, diamond::ExtZz<T>(npml) / 2, E, X);
-  PointSim2<T, T1, /*Npml=*/npml> sim(/*mat0=*/0.577f, srcnode, timestep, nlo,
-                                      nhi, srctype);
+  PointSim<T, T1, /*Npml=*/npml> sim(/*mat0=*/0.577f, srcnode, timestep, nlo,
+                                     nhi, srctype);
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.0f;
 

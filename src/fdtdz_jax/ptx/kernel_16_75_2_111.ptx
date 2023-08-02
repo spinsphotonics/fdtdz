@@ -20,7 +20,7 @@
 .extern .shared .align 16 .b8 _ZN6kernel5shmemE[];
 
 .visible .entry _ZN6kernel16SimulationKernelI7__half2fLi2ELb1ELb1ELb1EEEvNS_10KernelArgsIT_T0_EE(
-	.param .align 8 .b8 _ZN6kernel16SimulationKernelI7__half2fLi2ELb1ELb1ELb1EEEvNS_10KernelArgsIT_T0_EE_param_0[144]
+	.param .align 8 .b8 _ZN6kernel16SimulationKernelI7__half2fLi2ELb1ELb1ELb1EEEvNS_10KernelArgsIT_T0_EE_param_0[168]
 )
 {
 	.reg .pred 	%p<351>;
@@ -79,7 +79,7 @@ $L__BB0_2:
 	bra.uni 	$L__BB0_3;
 
 $L__BB0_1:
-	ld.param.f32 	%f36, [%rd1+88];
+	ld.param.f32 	%f36, [%rd1+112];
 	neg.f32 	%f35, %f36;
 	// begin inline asm
 	{.reg .f16 low;
@@ -89,7 +89,7 @@ $L__BB0_1:
 	// end inline asm
 
 $L__BB0_3:
-	ld.param.u64 	%rd43, [%rd1+136];
+	ld.param.u64 	%rd43, [%rd1+160];
 	cvta.to.global.u64 	%rd2, %rd43;
 	mad.lo.s32 	%r1711, %r1683, %r26, %r25;
 	mad.lo.s32 	%r1712, %r1711, %r1682, %r24;
@@ -159,7 +159,7 @@ $L__BB0_9:
 	@%p17 bra 	$L__BB0_9;
 
 $L__BB0_10:
-	ld.param.u64 	%rd52, [%rd1+56];
+	ld.param.u64 	%rd52, [%rd1+80];
 	cvta.to.global.u64 	%rd3, %rd52;
 	sub.s32 	%r1732, %r1687, %r29;
 	div.s32 	%r1733, %r1732, %r30;
@@ -193,9 +193,9 @@ $L__BB0_11:
 	setp.lt.s32 	%p18, %r7215, %r53;
 	@%p18 bra 	$L__BB0_673;
 
-	ld.param.u64 	%rd53, [%rd1+96];
+	ld.param.u64 	%rd53, [%rd1+120];
 	cvta.to.global.u64 	%rd5, %rd53;
-	ld.param.u64 	%rd54, [%rd1+64];
+	ld.param.u64 	%rd54, [%rd1+88];
 	cvta.to.global.u64 	%rd6, %rd54;
 	mad.lo.s32 	%r7257, %r1681, %r25, %r23;
 	mul.lo.s32 	%r57, %r1682, %r26;
@@ -506,9 +506,9 @@ $L__BB0_35:
 	@%p29 bra 	$L__BB0_14;
 
 $L__BB0_36:
-	ld.param.u64 	%rd91, [%rd1+104];
+	ld.param.u64 	%rd91, [%rd1+128];
 	cvta.to.global.u64 	%rd7, %rd91;
-	ld.param.u64 	%rd92, [%rd1+72];
+	ld.param.u64 	%rd92, [%rd1+96];
 	cvta.to.global.u64 	%rd8, %rd92;
 	@%p19 bra 	$L__BB0_120;
 
@@ -1176,9 +1176,9 @@ $L__BB0_119:
 
 $L__BB0_120:
 	setp.eq.s32 	%p71, %r1690, 1;
-	ld.param.u64 	%rd156, [%rd1+112];
+	ld.param.u64 	%rd156, [%rd1+136];
 	cvta.to.global.u64 	%rd11, %rd156;
-	ld.param.u64 	%rd157, [%rd1+80];
+	ld.param.u64 	%rd157, [%rd1+104];
 	cvta.to.global.u64 	%rd12, %rd157;
 	@%p71 bra 	$L__BB0_138;
 	bra.uni 	$L__BB0_121;
@@ -2627,7 +2627,7 @@ $L__BB0_270:
   mov.b32 %r2100, {low,high};}
 
 	// end inline asm
-	ld.param.u64 	%rd258, [%rd1+128];
+	ld.param.u64 	%rd258, [%rd1+152];
 	cvta.to.global.u64 	%rd19, %rd258;
 	mov.u32 	%r2101, 31;
 	sub.s32 	%r2102, %r2101, %r28;
@@ -3560,7 +3560,7 @@ $L__BB0_302:
 	mad.lo.s32 	%r635, %r2498, %r2499, %r2496;
 	sub.s32 	%r636, %r2506, %r2509;
 	mad.lo.s32 	%r637, %r2508, %r2512, %r2507;
-	ld.param.u64 	%rd268, [%rd1+120];
+	ld.param.u64 	%rd268, [%rd1+144];
 	cvta.to.global.u64 	%rd269, %rd268;
 	shl.b32 	%r2562, %r637, 1;
 	mul.wide.s32 	%rd270, %r2562, 4;
@@ -4957,7 +4957,7 @@ $L__BB0_391:
 	setp.ne.s32 	%p205, %r23, 0;
 	@%p205 bra 	$L__BB0_396;
 
-	ld.param.u64 	%rd552, [%rd1+56];
+	ld.param.u64 	%rd552, [%rd1+80];
 	cvta.to.global.u64 	%rd551, %rd552;
 	mad.lo.s32 	%r3442, %r633, %r1684, %r26;
 	mul.lo.s32 	%r3443, %r1682, %r3442;
@@ -4985,7 +4985,7 @@ $L__BB0_396:
 	setp.ne.s32 	%p208, %r24, 0;
 	@%p208 bra 	$L__BB0_398;
 
-	ld.param.u64 	%rd554, [%rd1+56];
+	ld.param.u64 	%rd554, [%rd1+80];
 	cvta.to.global.u64 	%rd553, %rd554;
 	mad.lo.s32 	%r3463, %r634, %r1683, %r25;
 	mul.lo.s32 	%r3467, %r3463, %r1738;
@@ -5014,7 +5014,7 @@ $L__BB0_398:
 	not.pred 	%p215, %p11;
 	@%p215 bra 	$L__BB0_409;
 
-	ld.param.u64 	%rd556, [%rd1+64];
+	ld.param.u64 	%rd556, [%rd1+88];
 	cvta.to.global.u64 	%rd555, %rd556;
 	mad.lo.s32 	%r1023, %r636, %r1686, %r635;
 	shl.b32 	%r3489, %r1023, 6;
@@ -5051,7 +5051,7 @@ $L__BB0_403:
 
 $L__BB0_405:
 	mad.lo.s32 	%r7209, %r636, %r1686, %r635;
-	ld.param.u64 	%rd558, [%rd1+64];
+	ld.param.u64 	%rd558, [%rd1+88];
 	cvta.to.global.u64 	%rd557, %rd558;
 	shl.b32 	%r3499, %r1687, 6;
 	shl.b32 	%r3500, %r7209, 7;
@@ -7192,7 +7192,7 @@ $L__BB0_489:
 	// end inline asm
 	selp.b32 	%r7449, %r7514, %r4990, %p12;
 	bar.sync 	0;
-	ld.param.u64 	%rd316, [%rd1+136];
+	ld.param.u64 	%rd316, [%rd1+160];
 	cvta.to.global.u64 	%rd33, %rd316;
 	setp.lt.s32 	%p256, %r637, %r1692;
 	or.pred  	%p258, %p256, %p215;
@@ -8381,7 +8381,7 @@ $L__BB0_544:
 
 $L__BB0_545:
 	setp.ne.s32 	%p289, %r23, %r2083;
-	ld.param.u64 	%rd509, [%rd1+56];
+	ld.param.u64 	%rd509, [%rd1+80];
 	cvta.to.global.u64 	%rd34, %rd509;
 	@%p289 bra 	$L__BB0_547;
 
@@ -8403,7 +8403,7 @@ $L__BB0_547:
 	setp.ne.s32 	%p290, %r24, %r2088;
 	@%p290 bra 	$L__BB0_552;
 
-	ld.param.u64 	%rd560, [%rd1+56];
+	ld.param.u64 	%rd560, [%rd1+80];
 	cvta.to.global.u64 	%rd559, %rd560;
 	mad.lo.s32 	%r5278, %r634, %r1683, %r25;
 	mul.lo.s32 	%r5282, %r5278, %r1738;
@@ -8517,7 +8517,7 @@ $L__BB0_560:
 	ld.shared.v2.u32 	{%r7629, %r7628}, [%r7201+768];
 
 $L__BB0_563:
-	ld.param.u64 	%rd521, [%rd1+56];
+	ld.param.u64 	%rd521, [%rd1+80];
 	cvta.to.global.u64 	%rd36, %rd521;
 	mov.u32 	%r7766, %r7608;
 	mov.u32 	%r7767, %r7609;
@@ -8593,7 +8593,7 @@ $L__BB0_569:
 	div.s32 	%r5469, %r5468, %r1686;
 	mad.lo.s32 	%r1418, %r5469, %r7207, %r5468;
 	mad.lo.s32 	%r5476, %r5469, %r30, %r2505;
-	ld.param.u64 	%rd530, [%rd1+72];
+	ld.param.u64 	%rd530, [%rd1+96];
 	cvta.to.global.u64 	%rd531, %rd530;
 	rem.s32 	%r5477, %r5476, %r1687;
 	shr.u32 	%r5478, %r5477, 31;
@@ -8606,7 +8606,7 @@ $L__BB0_569:
 	mul.wide.s32 	%rd532, %r5483, 4;
 	add.s64 	%rd533, %rd531, %rd532;
 	ld.global.u32 	%r7477, [%rd533];
-	ld.param.u64 	%rd534, [%rd1+80];
+	ld.param.u64 	%rd534, [%rd1+104];
 	cvta.to.global.u64 	%rd39, %rd534;
 	@%p71 bra 	$L__BB0_571;
 	bra.uni 	$L__BB0_570;
@@ -11185,7 +11185,7 @@ $L__BB0_655:
 
 $L__BB0_657:
 	setp.ne.s32 	%p348, %r23, %r2083;
-	ld.param.u64 	%rd539, [%rd1+56];
+	ld.param.u64 	%rd539, [%rd1+80];
 	cvta.to.global.u64 	%rd40, %rd539;
 	@%p348 bra 	$L__BB0_659;
 
