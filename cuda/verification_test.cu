@@ -75,7 +75,11 @@ template <typename T, typename T1, int Npml> struct PointSim2 {
                              ? srcnode.k + nhi
                              : srcnode.j + (srcnode.j % 2)),
            /*out=*/
-           RunShape::Out(/*start=*/timestep, /*interval=*/1, /*num=*/1)),
+           RunShape::Out(
+               /*start=*/timestep, /*interval=*/1, /*num=*/1,
+               /*x=*/RunShape::Out::Range(0, 16),
+               /*y=*/RunShape::Out::Range(0, 16),
+               /*z=*/RunShape::Out::Range(0, diamond::ExtZz<T>(Npml)))),
         alloc(rs.domain.x, rs.domain.y, diamond::ExtZz<T>(Npml), timestep, mat0,
               srcnode),
         sp(alloc.Params()), srcnode_(srcnode), timestep_(timestep), nlo_(nlo),

@@ -424,6 +424,9 @@ def fdtdz(
   dirname = os.path.join(os.path.dirname(sys.modules[__name__].__file__),
                          "ptx")
 
+  if output_subvolume is None:
+    output_subvolume = ((0, 0, 0), (xx, yy, zz))
+
   kwargs = {
       "hmat": dt,
       "capability": compute_capability[0] * 10 + compute_capability[1],
@@ -446,6 +449,7 @@ def fdtdz(
       "withshared": True,
       "withupdate": True,
       "use_reduced_precision": use_reduced_precision,
+      "output_subvolume": output_subvolume,
   }
 
   cbuffer = jnp.pad(cbuffer,
@@ -491,7 +495,7 @@ def fdtdz(
             _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
             :]
 
-  # TODO: Remove.
+  # TODO: Remove or change or something.
   if output_subvolume is None:
     return out
   else:
@@ -570,6 +574,12 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
       kwargs["srcpos"],
       kwargs["outstart"],
       kwargs["outinterval"],
+      kwargs["output_subvolume"][0][0],
+      kwargs["output_subvolume"][1][0],
+      kwargs["output_subvolume"][0][1],
+      kwargs["output_subvolume"][1][1],
+      kwargs["output_subvolume"][0][2],
+      kwargs["output_subvolume"][1][2],
       kwargs["outnum"],
       kwargs["dirname"],
   )

@@ -75,11 +75,16 @@ struct RunShape {
   };
 
   struct Out {
-    __dhce__ Out(int start, int interval, int num)
-        : start(start), interval(interval), num(num) {}
-    const int start;    // Begin recording output at this timestep (inclusive).
-    const int interval; // Number of timesteps between outputs.
-    const int num;      // Number of outputs to write.
+    struct Range {
+      __dhce__ Range(int start, int stop) : start(start), stop(stop) {}
+      int start, stop;
+    };
+    __dhce__ Out(int start, int interval, int num, Range x, Range y, Range z)
+        : start(start), interval(interval), num(num), x(x), y(y), z(z) {}
+    const int start;     // Begin recording output at this timestep (inclusive).
+    const int interval;  // Number of timesteps between outputs.
+    const int num;       // Number of outputs to write.
+    const Range x, y, z; // Defines subvolume to output.
   };
 
   __dhce__ RunShape(                                                 //
@@ -93,7 +98,9 @@ struct RunShape {
       UV blockshape, UV gridshape, int blockspacing, XY domainshape)
       : RunShape(blockshape, gridshape, blockspacing, domainshape,
                  Pml(/*n=*/0, /*zshift=*/0), Src(Src::ZSLICE, /*pos=*/0),
-                 Out(/*start=*/0, /*interval=*/0, /*num=*/0)) {}
+                 Out(/*start=*/0, /*interval=*/0, /*num=*/0,
+                     /*x=*/Out::Range(0, 0), /*y=*/Out::Range(0, 0),
+                     /*z=*/Out::Range(0, 0))) {}
 
   const UV block, grid; // Size of the diamond at the block and grid levels.
   const int spacing;    // Delay between adjacent blocks in the grid.

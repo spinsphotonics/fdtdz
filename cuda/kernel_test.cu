@@ -48,10 +48,10 @@ void BenchmarkKernel(kernel_precompiled::PreCompiledKernelType type,
   // Print out results;
   std::cout << tcups << "/" << actual_tcups << " (raw/adj) TCUPS at " //
             << minseconds / numsteps * 1e6 << " us/step ("            //
-            << minseconds * 1e3 << " ms, "                            //
-            << numsteps << " steps, "                                 //
-            << "\n";
-  // << testutils::NumRegisters(kernel) << " regs)\n";
+            << minseconds * 1e3
+            << " ms, " //
+            // << numsteps << " steps, "                                 //
+            << testutils::NumRegisters(kernel) << " regs)\n";
 }
 
 void SpacingBenchmark(int timesteps, int repeats, std::vector<int> spacings,
@@ -66,7 +66,12 @@ void SpacingBenchmark(int timesteps, int repeats, std::vector<int> spacings,
         /*domain=*/XY(200, 216),
         /*pml=*/RunShape::Pml(/*n=*/npml, /*zshift=*/2),
         /*src=*/RunShape::Src(RunShape::Src::YSLICE, /*srcpos=*/64),
-        /*out=*/RunShape::Out(/*start=*/timesteps, /*interval=*/1, /*num=*/1));
+        /*out=*/
+        RunShape::Out(
+            /*start=*/timesteps, /*interval=*/1, /*num=*/1,
+            /*x=*/RunShape::Out::Range(0, 200),
+            /*y=*/RunShape::Out::Range(0, 216),
+            /*z=*/RunShape::Out::Range(0, diamond::ExtZz<half2>(npml))));
     ASSERT_TRUE(scanner::IsValidRunShape(rs)) << "Invalid run shape: " << rs;
 
     KernelAlloc<half2, float> alloc(rs, /*hmat=*/defs::One<float>());
