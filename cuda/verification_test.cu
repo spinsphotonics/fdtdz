@@ -235,6 +235,31 @@ TEST(Verification, PointSourceWithPml) {
   sim.SimAndTest();
 }
 
+TEST(Verification, PointSourceSubvolumeWithPml) {
+  constexpr const int nlo = 5;
+  constexpr const int nhi = 7;
+  Node srcnode(7, 7, 5, E, X);
+  PointSim<float, float, /*Npml=*/(nlo + nhi) / Nz> sim(
+      /*mat0=*/1.0f, srcnode,
+      /*timestep=*/4, nlo, nhi,
+      /*srctype=*/RunShape::Src::ZSLICE,
+      /*xrange=*/RunShape::Out::Range(2, 14),
+      /*yrange=*/RunShape::Out::Range(2, 14),
+      /*zrange=*/
+      RunShape::Out::Range(5, diamond::ExtZz<float>(/*Npml=*/0) - 5));
+  auto sp = sim.SimParams();
+  sp.wf0[0] = 1.0f;
+
+  // Modify pml coefficients.
+  const reference::ZCoeff<float> zc = {0.2f, 0.3f, 0.5f, 1.0f, 0.4f, 0.6f};
+  for (int i = 0; i < nlo; ++i)
+    sp.zcoeff[i] = zc;
+  for (int i = 0; i < nhi; ++i)
+    sp.zcoeff[sp.z - i - 1] = zc;
+
+  sim.SimAndTest();
+}
+
 TEST(Verification, FloatSim) {
   Node srcnode(7, 7, 17, E, X);
   PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
@@ -261,12 +286,12 @@ TEST(Verification, Half2SimSubvolume) {
   Node srcnode(7, 7, 15, E, Y);
   PointSim<half2, float, /*Npml=*/0> sim(
       /*mat0=*/0.5f, srcnode,
-      /*timestep=*/0,
+      /*timestep=*/4,
       /*nlo=*/0,
       /*nhi=*/0,
       /*srctype=*/RunShape::Src::ZSLICE,
-      /*xrange=*/RunShape::Out::Range(1, 16),
-      /*yrange=*/RunShape::Out::Range(0, 16),
+      /*xrange=*/RunShape::Out::Range(2, 15),
+      /*yrange=*/RunShape::Out::Range(1, 14),
       /*zrange=*/
       RunShape::Out::Range(10, diamond::ExtZz<half2>(/*Npml=*/0) - 10));
   auto sp = sim.SimParams();
@@ -294,6 +319,30 @@ TEST(Verification, Half2WithPml) {
   Node srcnode(7, 7, 10, E, Y); // Completely in bottom pml.
   PointSim<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
       /*mat0=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi);
+  auto sp = sim.SimParams();
+  sp.wf0[0] = 0.5f;
+
+  // Modify pml coefficients.
+  const reference::ZCoeff<float> zc = {2.0f, 1.0f, 0.5f, 1.0f, 2.0f, 0.25f};
+  for (int i = 0; i < nlo; ++i)
+    sp.zcoeff[i] = zc;
+  for (int i = 0; i < nhi; ++i)
+    sp.zcoeff[sp.z - i - 1] = zc;
+
+  sim.SimAndTest();
+}
+
+TEST(Verification, Half2SubvolumeWithPml) {
+  constexpr const int nlo = 12;
+  constexpr const int nhi = 12;
+  Node srcnode(7, 7, 10, E, Y); // Completely in bottom pml.
+  PointSim<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
+      /*mat0=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi,
+      /*srctype=*/RunShape::Src::ZSLICE,
+      /*xrange=*/RunShape::Out::Range(2, 14),
+      /*yrange=*/RunShape::Out::Range(3, 15),
+      /*zrange=*/
+      RunShape::Out::Range(10, diamond::ExtZz<half2>(/*Npml=*/0) - 10));
   auto sp = sim.SimParams();
   sp.wf0[0] = 0.5f;
 

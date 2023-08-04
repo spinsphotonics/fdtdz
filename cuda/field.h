@@ -192,7 +192,6 @@ __dh__ void Init(T1 *ptr, defs::RunShape rs, int threadpos, defs::UV warppos,
            rs.block.u * (warppos.v +
                          rs.block.v * (blockpos.u + rs.grid.u * blockpos.v)));
   int stride = defs::kWarpSize * defs::Prod(rs.block * rs.grid);
-  // TODO: Need to change this initialization.
   for (int i = init;
        i < ExternalElems<T>(rs.out.x, rs.out.y, rs.out.z, rs.out.num, rs.pml.n);
        i += stride)
