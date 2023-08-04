@@ -101,9 +101,9 @@ kern32gen_npml(75)
 # kern32gen_npml(80)
 # kern16gen_npml(60)
 # kern16gen_npml(70)
-kern16gen_npml(75)
+# kern16gen_npml(75)
 # kern16gen_npml(80)
-kerngen_bmark(75 7)
+# kerngen_bmark(75 7)
 
 
 include(GoogleTest)

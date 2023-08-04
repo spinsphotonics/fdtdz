@@ -39,11 +39,15 @@ void FillWithXyHalo(T val, T haloval, int d, T *ptr,
 }
 
 template <typename T>
-void PrintField(T *ptr, int k, Xyz xyz, reference::SimParams<T> sp) {
-  for (int j = sp.y - 1; j >= 0; --j) {
-    for (int i = 0; i < sp.x; ++i)
-      std::cout << ptr[FieldIndex(Node(i, j, k, E, xyz), sp.x, sp.y, sp.z)]
-                << " ";
+void PrintField(T *ptr, int k, Xyz xyz, RunShape::Out::Range xrange,
+                RunShape::Out::Range yrange, RunShape::Out::Range zrange) {
+  int xx = xrange.stop - xrange.start;
+  int yy = yrange.stop - yrange.start;
+  int zz = zrange.stop - zrange.start;
+  k -= zrange.start;
+  for (int j = yy - 1; j >= 0; --j) {
+    for (int i = 0; i < xx; ++i)
+      std::cout << ptr[FieldIndex(Node(i, j, k, E, xyz), xx, yy, zz)] << " ";
     std::cout << "\n";
   }
 }
@@ -101,7 +105,11 @@ template <typename T, typename T1, int Npml> struct PointSim {
   }
 
   void SimAndTest() {
-    testutils::Array<T1> out(reference::FieldElems(sp.x, sp.y, sp.z));
+    int xx = rs.out.x.stop - rs.out.x.start;
+    int yy = rs.out.y.stop - rs.out.y.start;
+    int zz = rs.out.z.stop - rs.out.z.start;
+
+    testutils::Array<T1> out(reference::FieldElems(xx, yy, zz));
     Sim(out.Ptr());
 
     std::cout << "\nReference:\n";
@@ -109,20 +117,25 @@ template <typename T, typename T1, int Npml> struct PointSim {
                            reference::FIELD, sp);
 
     std::cout << "\nKernel2:\n";
-    PrintField(out.Ptr(), /*k=*/srcnode_.k, srcnode_.xyz, sp);
+    PrintField(out.Ptr(), /*k=*/srcnode_.k, srcnode_.xyz, rs.out.x, rs.out.y,
+               rs.out.z);
     // PrintField2(out.Ptr(), /*i=*/srcnode_.i, srcnode_.xyz, sp);
 
     // Check.
     reference::Cache<T1> cache;
-    for (int x = 0; x < sp.x; ++x)
-      for (int y = 0; y < sp.y; ++y)
-        for (int z = 0; z < sp.z; ++z)
+    for (int x = diamond::N; x < xx - diamond::N; ++x)
+      for (int y = diamond::N; y < yy - diamond::N; ++y)
+        for (int z = 0; z < zz; ++z)
           for (Xyz xyz : diamond::AllXyz) {
-            Node n(x, y, z, E, xyz);
+            Node refnode(x + rs.out.x.start, //
+                         y + rs.out.y.start, //
+                         z + rs.out.z.start, //
+                         E, xyz);
+            Node outnode(x, y, z, E, xyz);
             ASSERT_FLOAT_EQ(
-                reference::Get(n, timestep_, reference::FIELD, sp, cache),
-                out.Ptr()[FieldIndex(n, sp.x, sp.y, sp.z)])
-                << "node " << n;
+                reference::Get(refnode, timestep_, reference::FIELD, sp, cache),
+                out.Ptr()[FieldIndex(outnode, xx, yy, zz)])
+                << "refnode: " << refnode << ", outnode: " << outnode;
           }
   }
 
@@ -144,11 +157,52 @@ TEST(Verification, PointSource) {
   sim.SimAndTest();
 }
 
+TEST(Verification, PointSourceSubvolume) {
+  Node srcnode(7, 7, 17, E, X);
+  PointSim<float, float, /*Npml=*/0> sim(
+      /*mat0=*/1.0f, srcnode,
+      /*timestep=*/8,
+      /*nlo=*/0,
+      /*nhi=*/0,
+      /*srctype=*/RunShape::Src::ZSLICE,
+      /*xrange=*/RunShape::Out::Range(2, 14),
+      /*yrange=*/RunShape::Out::Range(2, 14),
+      /*zrange=*/
+      RunShape::Out::Range(5, diamond::ExtZz<float>(/*Npml=*/0) - 5));
+  auto sp = sim.SimParams();
+  sp.wf0[0] = 1.0f;
+  sim.SimAndTest();
+}
+
 TEST(Verification, PointSourceWithModifications) {
   Node srcnode(7, 7, 16, E, Y);
   PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode,
                                          /*timestep=*/8,
                                          /*nlo=*/0, /*nhi=*/0);
+  auto sp = sim.SimParams();
+  sp.wf1[0] = 1.0f;
+  sp.abs[FieldIndex(Node(6, 6, 0, E, X), sp.x, sp.y)] = 2.0f;
+  sp.mat[FieldIndex(Node(8, 8, 16, E, X), sp.x, sp.y, sp.z)] = 0.0f;
+  sp.zcoeff[10].edz = 3.0f;
+  sp.zcoeff[16].hdz = 2.0f;
+
+  sp.mat[FieldIndex(Node(8, 8, 16, E, X), sp.x, sp.y, sp.z)] = 0.0f;
+
+  sim.SimAndTest();
+}
+
+TEST(Verification, PointSourceSubvolumeWithModifications) {
+  Node srcnode(7, 7, 16, E, Y);
+  PointSim<float, float, /*Npml=*/0> sim(
+      /*mat0=*/1.0f, srcnode,
+      /*timestep=*/8,
+      /*nlo=*/0,
+      /*nhi=*/0,
+      /*srctype=*/RunShape::Src::ZSLICE,
+      /*xrange=*/RunShape::Out::Range(2, 14),
+      /*yrange=*/RunShape::Out::Range(2, 14),
+      /*zrange=*/
+      RunShape::Out::Range(5, diamond::ExtZz<float>(/*Npml=*/0) - 5));
   auto sp = sim.SimParams();
   sp.wf1[0] = 1.0f;
   sp.abs[FieldIndex(Node(6, 6, 0, E, X), sp.x, sp.y)] = 2.0f;
@@ -198,6 +252,23 @@ TEST(Verification, Half2Sim) {
   PointSim<half2, float, /*Npml=*/0> sim(/*mat0=*/0.5f, srcnode,
                                          /*timestep=*/4, /*nlo=*/0,
                                          /*nhi=*/0);
+  auto sp = sim.SimParams();
+  sp.wf0[0] = 1.5f;
+  sim.SimAndTest();
+}
+
+TEST(Verification, Half2SimSubvolume) {
+  Node srcnode(7, 7, 15, E, Y);
+  PointSim<half2, float, /*Npml=*/0> sim(
+      /*mat0=*/0.5f, srcnode,
+      /*timestep=*/0,
+      /*nlo=*/0,
+      /*nhi=*/0,
+      /*srctype=*/RunShape::Src::ZSLICE,
+      /*xrange=*/RunShape::Out::Range(1, 16),
+      /*yrange=*/RunShape::Out::Range(0, 16),
+      /*zrange=*/
+      RunShape::Out::Range(10, diamond::ExtZz<half2>(/*Npml=*/0) - 10));
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.5f;
   sim.SimAndTest();

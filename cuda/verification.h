@@ -114,7 +114,8 @@ void RunKernel(RunShape rs, T1 *outptr, reference::SimParams<T1> sp, int nlo,
   cudaDeviceSynchronize(); // TODO: Better error checking.
 
   // Copy output.
-  for (int i = 0; i < field::ExternalElems<T>(rs.domain, /*nout=*/1, rs.pml.n);
+  for (int i = 0; i < field::ExternalElems<T>(rs.out.x, rs.out.y, rs.out.z,
+                                              /*nout=*/1, rs.pml.n);
        ++i)
     outptr[i] = args.output[i];
 }

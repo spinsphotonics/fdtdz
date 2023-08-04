@@ -407,7 +407,8 @@ public:
                 : slice::YSrc<T>::ExternalElems(rs.domain.x, rs.pml.n)), //
         extwaveform_(2 * defs::NumTimeSteps(rs.out)),                    //
         zcoeff_(zcoeff::ExternalElems<T>(rs.pml.n)),                     //
-        out_(field::ExternalElems<T>(rs.domain, rs.out.num, rs.pml.n)),
+        out_(field::ExternalElems<T>(rs.out.x, rs.out.y, rs.out.z, rs.out.num,
+                                     rs.pml.n)),
         args_(rs,
               KernelInternal(intbuffer_.Ptr(), intcbuffer_.Ptr(),
                              intmask_.Ptr(), intsrc_.Ptr()),
