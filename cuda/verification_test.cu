@@ -166,7 +166,7 @@ TEST(Verification, PointSourceSubvolume) {
       /*nhi=*/0,
       /*srctype=*/RunShape::Src::ZSLICE,
       /*xrange=*/RunShape::Out::Range(2, 14),
-      /*yrange=*/RunShape::Out::Range(2, 14),
+      /*yrange=*/RunShape::Out::Range(1, 15),
       /*zrange=*/
       RunShape::Out::Range(5, diamond::ExtZz<float>(/*Npml=*/0) - 5));
   auto sp = sim.SimParams();

@@ -549,9 +549,9 @@ def _internal_shapes(xx, yy, zz, **kwargs):
 
   """
   # TODO: Remove.
-  print(f"{kwargs['ranges']}")
+  print(f"ranges: {kwargs['ranges']}")
   print(
-      f"{((kwargs['outnum'], 3) + tuple(b - a for a, b in kwargs['ranges']))}")
+      f"output_shapes: {((kwargs['outnum'], 3) + tuple(b - a for a, b in kwargs['ranges']))}")
   return {
       "buffer": (6, xx, yy, 64),  # Larger than needed.
       "cbuffer": (3, xx, yy, 64),  # Larger than needed.
