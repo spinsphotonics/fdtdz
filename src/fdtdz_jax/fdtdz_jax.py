@@ -163,10 +163,13 @@ def fdtdz(
 
   Args:
     epsilon: ``(3, xx, yy, zz)``-shaped array of floats representing the
-      permittivity values at the ``Ex``, ``Ey``, and ``Ez`` nodes of the Yee cell
-      respectively. We use the convention that these components are located at
-      ``(0.5, 0, 0)``, ``(0, 0.5, 0)``, and ``(0, 0, 0.5)`` respectively, for a Yee
-      cell of side-length 1.
+      permittivity values at the ``Ex``, ``Ey``, and ``Ez`` nodes of the Yee
+      cell respectively. We use the convention that these components are located
+      at ``(0.5, 0, 0)``, ``(0, 0.5, 0)``, and ``(0, 0, 0.5)`` respectively, for
+      a Yee cell of side-length 1. If ``subvolume`` is not ``None``, then
+      ``epsilon`` is expected to be defined only on the desired output subvolume
+      and to have the shape ``(3, x1 - x0, y1 - y0, z1 - z0)``, with values
+      outside of the subvolume assigned to those of the nearest subvolume edge.
     dt: Scalar float representing the amount of time elapsed in one update step.
     source_field: An array of shape ``(2, 1, yy, zz)``, ``(2, xx, 1, zz)``, or
       ``(2, 2, xx, yy, 1)``-shaped array for a source at
@@ -239,11 +242,16 @@ def fdtdz(
       allowed values are ``(3, 7)``, ``(6, 0)``, ``(7, 0)``, ``(7, 5)``, and
       ``(8, 0)``. Recommended to use the latest compute capability kernel
       possible that does not exceed the compute capability of the device.
+    subvolume: ``None`` or ``((x0, y0, z0), (x1, y1, z1))`` integers denoting
+      that only the subdomain contained within ``x0 <= x < x1``,
+      ``y0 <= y < y1``, and ``z0 <= z < z1`` is to be returned.
 
   Returns:
-    ``(n, 3, xx, yy, zz)`` array of floats representing ``n`` output fields, where
-    each output field consists of the values of the ``Ex``, ``Ey``, and ``Ez`` node
-    (in that order) over the simulation domain, at a specific update step.
+    ``(n, 3, xx, yy, zz)`` (or ``(n, 3, x1 - x0, y1 - y0, z1 - z0)`` if
+    ``subvolume`` is not ``None``) array of floats representing ``n`` output
+    fields, where each output field consists of the values of the ``Ex``,
+    ``Ey``, and ``Ez`` node (in that order) over the simulation domain, at a
+    specific update step.
 
   """
   total_pml_width = pml_widths[0] + pml_widths[1]
@@ -339,11 +347,10 @@ def fdtdz(
     out = out[:, (1, 0, 2), ...]
     out = _flip_roll_component(
         out, component=2, splitaxis=1, flipaxis=4, scalez=-1)
-    if subvolume is None:
-      return out
-    else:
+    if subvolume is not None:
       # Need to eliminate the extra subvolume along z.
-      return out[..., :-1]
+      out = out[..., :-1]
+    return out
 
     # # TODO: Remove.
     # if subvolume is None:
@@ -423,7 +430,14 @@ def fdtdz(
                          "ptx")
 
   if subvolume is None:
-    subvolume = ((0, 0, 0), (xx, yy, zz))
+    ranges = ((0, xx + 2 * _NUM_PAD_CELLS),
+              (0, yy + 2 * _NUM_PAD_CELLS),
+              (0, zz))
+  else:
+    (x0, y0, z0), (x1, y1, z1) = subvolume
+    ranges = ((x0, x1 + 2 * _NUM_PAD_CELLS),
+              (y0, y1 + 2 * _NUM_PAD_CELLS),
+              (z0, z1))
 
   kwargs = {
       "hmat": dt,
@@ -447,7 +461,7 @@ def fdtdz(
       "withshared": True,
       "withupdate": True,
       "use_reduced_precision": use_reduced_precision,
-      "subvolume": subvolume,
+      "ranges": ranges,
   }
 
   cbuffer = jnp.pad(cbuffer,
@@ -487,21 +501,30 @@ def fdtdz(
   out = fdtdz_impl(cbuffer, abslayer, srclayer, source_waveform, zcoeff,
                    **kwargs)
 
-  out = out[:,
-            :,
-            _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
-            _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
-            :]
-
-  # TODO: Remove or change or something.
   if subvolume is None:
-    return out
+    out_xx, out_yy = xx, yy
   else:
-    return out[:,
-               :,
-               subvolume[0][0]:subvolume[1][0],
-               subvolume[0][1]:subvolume[1][1],
-               subvolume[0][2]:subvolume[1][2]]
+    (xa, ya, _), (xb, yb, _) = subvolume
+    out_xx, out_yy = xb - xa, yb - ya
+
+  print(f"{out_xx}, {out_yy}")
+  print(f"{out.shape}")
+  print(f"{subvolume}")
+  return out[:,
+             :,
+             _NUM_PAD_CELLS:out_xx + _NUM_PAD_CELLS,
+             _NUM_PAD_CELLS:out_yy + _NUM_PAD_CELLS,
+             :]
+
+  # # TODO: Remove or change or something.
+  # if subvolume is None:
+  #   return out
+  # else:
+  #   return out[:,
+  #              :,
+  #              subvolume[0][0]:subvolume[1][0],
+  #              subvolume[0][1]:subvolume[1][1],
+  #              subvolume[0][2]:subvolume[1][2]]
   # return out[:,
   #            :,
   #            _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
@@ -525,12 +548,17 @@ def _internal_shapes(xx, yy, zz, **kwargs):
   kernel, _not_ to those provided in the more user-friendly ``fdtdz()``.
 
   """
+  # TODO: Remove.
+  print(f"{kwargs['ranges']}")
+  print(
+      f"{((kwargs['outnum'], 3) + tuple(b - a for a, b in kwargs['ranges']))}")
   return {
       "buffer": (6, xx, yy, 64),  # Larger than needed.
       "cbuffer": (3, xx, yy, 64),  # Larger than needed.
       "mask": (xx, yy // 2, 32),
       "src": (xx, yy // 2, 32) if kwargs["srctype"] == 1 else (2, xx, zz),
-      "output": (kwargs["outnum"], 3, xx, yy, zz),
+      "output": ((kwargs["outnum"], 3) +
+                 tuple(b - a for a, b in kwargs["ranges"])),
   }
 
 
@@ -572,12 +600,12 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
       kwargs["srcpos"],
       kwargs["outstart"],
       kwargs["outinterval"],
-      kwargs["subvolume"][0][0],
-      kwargs["subvolume"][1][0],
-      kwargs["subvolume"][0][1],
-      kwargs["subvolume"][1][1],
-      kwargs["subvolume"][0][2],
-      kwargs["subvolume"][1][2],
+      kwargs["ranges"][0][0],
+      kwargs["ranges"][0][1],
+      kwargs["ranges"][1][0],
+      kwargs["ranges"][1][1],
+      kwargs["ranges"][2][0],
+      kwargs["ranges"][2][1],
       kwargs["outnum"],
       kwargs["dirname"],
   )
