@@ -417,7 +417,13 @@ def fdtdz(
   pxx, pyy = _padded_domain_shape((xx, yy), launch_params)
 
   denom = 1 / dt + absorption_mask / 2
-  cbuffer = 1 / (epsilon * denom[..., None])
+  if subvolume is None:
+    cbuffer = 1 / (epsilon * denom[..., None])
+  else:
+    cbuffer = 1 / (epsilon * denom[:,
+                                   subvolume[0][0]:subvolume[1][0],
+                                   subvolume[0][1]:subvolume[1][1],
+                                   None])
   abslayer = ((1 / dt) - (absorption_mask / 2)) / denom
 
   # PML coefficients.
@@ -475,11 +481,20 @@ def fdtdz(
       "ranges": ranges,
   }
 
-  cbuffer = jnp.pad(cbuffer,
-                    ((0, 0),
-                     (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
-                     (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
-                     (0, 0)))
+  if subvolume is None:
+    cbuffer = jnp.pad(cbuffer,
+                      ((0, 0),
+                       (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+                       (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
+                       (0, 0)))
+  else:
+    cbuffer = jnp.pad(cbuffer,
+                      ((0, 0),
+                       (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
+                       (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
+                       (0, 0)),
+                      mode="edge")
+
   abslayer = jnp.pad(abslayer,
                      ((0, 0),
                       (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
@@ -509,6 +524,7 @@ def fdtdz(
       ],
       axis=-1)
 
+  jax.debug.print("cbuffer debug print\n{cbuffer}", cbuffer=cbuffer)
   out = fdtdz_impl(cbuffer, abslayer, srclayer, source_waveform, zcoeff,
                    **kwargs)
 
