@@ -9,6 +9,7 @@
 #include "field.h"
 #include "kernel.h"
 #include "kernel_precompiled.h"
+#include "reference.h"
 #include "slice.h"
 #include "testutils.h"
 
@@ -26,9 +27,17 @@ using diamond::Node;
 using diamond::Nz;
 using diamond::Xyz;
 
-template <typename T, typename T1> void MatCopy(T1 *src, T1 *dst, RunShape rs) {
-  for (int i = 0; i < cbuf::ExternalElems<T>(rs.domain, rs.pml.n); ++i)
-    dst[i] = src[i];
+template <typename T, typename T1>
+void MatCopy(T1 *src, T1 *dst, RunShape rs, int refxx, int refyy, int refzz) {
+  for (int i = rs.out.x.start; i < rs.out.x.stop; ++i)
+    for (int j = rs.out.y.start; j < rs.out.y.stop; ++j)
+      for (int k = rs.out.z.start; k < rs.out.z.stop; ++k)
+        for (Xyz xyz : diamond::AllXyz) {
+          dst[cbuf::ExternalIndex(Node(i, j, k, diamond::C, xyz), rs.domain,
+                                  rs.pml.n, rs.out.x, rs.out.y, rs.out.z)] =
+              src[reference::FieldIndex(Node(i, j, k, diamond::C, xyz), refxx,
+                                        refyy, refzz)];
+        }
 }
 
 template <typename T, typename T1>
@@ -98,7 +107,7 @@ void RunKernel(RunShape rs, T1 *outptr, reference::SimParams<T1> sp, int nlo,
   kernel::KernelArgs<T, T1> args = alloc.Args();
 
   // Convert inputs.
-  MatCopy<T, T1>(sp.mat, args.inputs.cbuffer, rs);
+  MatCopy<T, T1>(sp.mat, args.inputs.cbuffer, rs, sp.x, sp.y, sp.z);
   ZCoeffCopy<T, T1>(sp.zcoeff, args.inputs.zcoeff, rs);
   AbsLayerCopy<T1>(sp.abs, args.inputs.abslayer, rs);
   SrcLayerInit<T, T1>(args.inputs.srclayer, sp.srcnode, rs);

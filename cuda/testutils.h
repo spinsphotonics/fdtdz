@@ -399,8 +399,8 @@ public:
         intsrc_(rs.src.type == RunShape::Src::ZSLICE
                     ? slice::ZSrc<T>::GlobalElems(rs.domain)
                     : slice::YSrc<T>::GlobalElems(rs.domain.x)),
-        extcbuffer_(cbuf::ExternalElems<T>(rs.domain, rs.pml.n)), //
-        extabslayer_(slice::ZMask<T>::ExternalElems(rs.domain)),  //
+        extcbuffer_(cbuf::ExternalElems(rs.out.x, rs.out.y, rs.out.z)), //
+        extabslayer_(slice::ZMask<T>::ExternalElems(rs.domain)),        //
         extsrclayer_(
             rs.src.type == RunShape::Src::ZSLICE
                 ? slice::ZSrc<T>::ExternalElems(rs.domain)

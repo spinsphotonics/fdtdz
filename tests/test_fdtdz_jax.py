@@ -56,6 +56,7 @@ def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
               subvolume=None):
   """Run a simple continuous-wave dipole-source simulation."""
   zz = (128 if use_reduced_precision else 64) - sum(pml_widths)
+  # TODO: Put some structure in ``epsilon``.
   epsilon = np.ones((3, xx, yy, zz), np.float32)
 
   abs_mask = _absorption_mask(xx, yy, abs_width, abs_smoothness)
@@ -84,8 +85,16 @@ def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
   source_waveform = np.broadcast_to(
       _ramped_sin(src_wavelength, src_ramp, dt, tt)[:, None], (tt, 2))
 
+  if subvolume is None:
+    sim_epsilon = epsilon
+  else:
+    sim_epsilon = epsilon[:,
+                          subvolume[0][0]: subvolume[1][0],
+                          subvolume[0][1]: subvolume[1][1],
+                          subvolume[0][2]: subvolume[1][2]]
+
   fields = fdtdz_jax.fdtdz(
-      epsilon,
+      sim_epsilon,
       dt,
       source_field,
       source_waveform,

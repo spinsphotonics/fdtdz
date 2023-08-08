@@ -268,12 +268,21 @@ def fdtdz(
   zz = ((128 if use_reduced_precision else 64) -
         (pml_widths[0] + pml_widths[1]))
 
-  if not (epsilon.ndim == 4 and epsilon.shape[0] == 3
-          and epsilon.shape[3] == zz):
-    raise ValueError(f"epsilon must have shape (3, xx, yy, zz) "
-                     f"with zz == {zz} but instead got {epsilon.shape}.")
-
-  _, xx, yy, _ = epsilon.shape
+  if subvolume is None:
+    if not (epsilon.ndim == 4 and epsilon.shape[0] == 3 and
+            epsilon.shape[3] == zz):
+      raise ValueError(f"epsilon must have shape (3, xx, yy, zz) "
+                       f"with zz == {zz} but instead got {epsilon.shape}.")
+    _, xx, yy, _ = epsilon.shape
+  else:
+    if not (epsilon.ndim == 4 and epsilon.shape[0] == 3 and
+            epsilon.shape[1] == subvolume[1][0] - subvolume[0][0] and
+            epsilon.shape[2] == subvolume[1][1] - subvolume[0][1] and
+            epsilon.shape[3] == subvolume[1][2] - subvolume[0][2]):
+      raise ValueError(f"``epsilon`` must have shape (3, xx, yy, zz) "
+                       f"corresponding to ``subvolume`` which is {subvolume}, "
+                       f"but got a shape of {epsilon.shape}.")
+    _, xx, yy = absorption_mask.shape
 
   if not ((_is_source_type(source_field, "x") and
            source_field.shape == (2, 1, yy, zz)) or
@@ -363,6 +372,8 @@ def fdtdz(
     #              subvolume[0][2]:subvolume[1][2]]
     # return out
 
+  # TODO: Consider putting this shape logic and shape checking above the "x"
+  # transposition code.
   out_start, out_stop, out_interval = output_steps
   out_num = len(range(out_start, out_stop, out_interval))
   tt = out_start + out_interval * (out_num - 1) + 1

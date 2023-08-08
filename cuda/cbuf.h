@@ -28,13 +28,30 @@ using diamond::Y;
 using diamond::Z;
 
 // External buffer does not hold c-values for auxiliary threads.
-template <typename T> __dhce__ int ExternalElems(XY domain, int npml) {
-  return domain.x * domain.y * ExtZz<T>(npml) * diamond::kNumXyz;
+__dhce__ int ExternalElems(RunShape::Out::Range xrange,
+                           RunShape::Out::Range yrange,
+                           RunShape::Out::Range zrange) {
+  int xx = xrange.stop - xrange.start;
+  int yy = yrange.stop - yrange.start;
+  int zz = zrange.stop - zrange.start;
+  return xx * yy * zz * diamond::kNumXyz;
 }
 
-template <typename T> __dhce__ int ExternalIndex(Node n, XY domain, int npml) {
-  return n.k + ExtZz<T>(npml) *
-                   (n.j + domain.y * (n.i + domain.x * diamond::Index(n.xyz)));
+__dhce__ int ExternalIndex(Node n, XY domain, int npml,
+                           RunShape::Out::Range xrange,
+                           RunShape::Out::Range yrange,
+                           RunShape::Out::Range zrange) {
+  int i = n.i - xrange.start;
+  int j = n.j - yrange.start;
+  int k = n.k - zrange.start;
+  int xx = xrange.stop - xrange.start;
+  int yy = yrange.stop - yrange.start;
+  int zz = zrange.stop - zrange.start;
+  return k + zz * (j + yy * (i + xx * diamond::Index(n.xyz)));
+  // TODO: Remove.
+  // return n.k + ExtZz<T>(npml) *
+  //                  (n.j + domain.y * (n.i + domain.x *
+  //                  diamond::Index(n.xyz)));
 }
 
 __dhce__ int GlobalElems(XY domain) {
@@ -56,31 +73,61 @@ __dhce__ int GlobalIndex(Node n, XY domain) {
   }
 }
 
+__dhce__ int ClipToRange(int val, RunShape::Out::Range range) {
+  if (val < range.start)
+    return range.start;
+  else if (val >= range.stop)
+    return range.stop - 1;
+  else
+    return val;
+}
+
+__dhce__ Node NearestInRangeNode(Node n, RunShape::Out::Range xrange,
+                                 RunShape::Out::Range yrange,
+                                 RunShape::Out::Range zrange) {
+  return Node(ClipToRange(n.i, xrange), //
+              ClipToRange(n.j, yrange), //
+              ClipToRange(n.k, zrange), //
+              n.ehc, n.xyz);
+}
+
 // Write the external node `n` into the internal buffer.
 template <typename T>
-__dh__ void WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos,
-                        int npml, int zshift, bool isaux) {
-  Node externalnode = n.K(ExtZIndex<T>(n.k, threadpos, npml, zshift));
+__dh__ void
+WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos, int npml,
+            int zshift, bool isaux, RunShape::Out::Range xrange,
+            RunShape::Out::Range yrange, RunShape::Out::Range zrange) {
+  Node externalnode = NearestInRangeNode(
+      n.K(ExtZIndex<T>(n.k, threadpos, npml, zshift)), xrange, yrange, zrange);
   Node globalnode = n.dK(Nz * threadpos);
   dst[GlobalIndex(globalnode, domain)] =
       isaux ? defs::One<T>()
-            : src[ExternalIndex<T>(externalnode, domain, npml)];
+            : src[ExternalIndex(externalnode, domain, npml, xrange, yrange,
+                                zrange)];
 }
 
 #ifndef __OMIT_HALF2__
 // Fill the internal global c-buffer with values from the external buffer.
 __dh__ void WriteGlobal(float *src, half2 *dst, Node n, XY domain,
-                        int threadpos, int npml, int zshift, bool isaux) {
-  Node enodelo = n.K(ExtZIndex<half2>(n.k, threadpos, npml, zshift));
-  Node enodehi = n.K(ExtZIndex<half2>(n.k + Nz, threadpos, npml, zshift));
+                        int threadpos, int npml, int zshift, bool isaux,
+                        RunShape::Out::Range xrange,
+                        RunShape::Out::Range yrange,
+                        RunShape::Out::Range zrange) {
+  Node enodelo =
+      NearestInRangeNode(n.K(ExtZIndex<half2>(n.k, threadpos, npml, zshift)),
+                         xrange, yrange, zrange);
+  Node enodehi = NearestInRangeNode(
+      n.K(ExtZIndex<half2>(n.k + Nz, threadpos, npml, zshift)), xrange, yrange,
+      zrange);
   Node globalnode = n.dK(Nz * threadpos);
   dst[GlobalIndex(globalnode, domain)] =
-      isaux
-          ? defs::One<half2>() // Default value of `1` is needed to avoid
-                               // branching in the update code when dealing with
-                               // auxiliary thread.
-          : __floats2half2_rn(src[ExternalIndex<half2>(enodelo, domain, npml)],
-                              src[ExternalIndex<half2>(enodehi, domain, npml)]);
+      isaux ? defs::One<half2>() // Default value of `1` is needed to avoid
+                                 // branching in the update code when dealing
+                                 // with auxiliary thread.
+            : __floats2half2_rn(src[ExternalIndex(enodelo, domain, npml, xrange,
+                                                  yrange, zrange)],
+                                src[ExternalIndex(enodehi, domain, npml, xrange,
+                                                  yrange, zrange)]);
 }
 #endif
 
@@ -241,7 +288,8 @@ __dh__ void Convert(T1 *src, T *dst, RunShape rs, int zshift, int threadpos,
         for (diamond::Xyz xyz : diamond::AllXyz)
           cbuf::WriteGlobal(src, dst, diamond::Node(i, j, k, diamond::E, xyz),
                             rs.domain, threadpos, rs.pml.n, zshift,
-                            defs::IsAux(threadpos, rs.pml.n));
+                            defs::IsAux(threadpos, rs.pml.n), rs.out.x,
+                            rs.out.y, rs.out.z);
 }
 
 } // namespace cbuf
