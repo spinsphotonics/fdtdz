@@ -92,7 +92,7 @@ def _flip_roll(array, axis):
     "output_steps",
     "use_reduced_precision",
     "launch_params",
-    "subvolume",
+    "offset",
 ])
 def fdtdz(
     epsilon,
@@ -108,7 +108,7 @@ def fdtdz(
     output_steps,
     use_reduced_precision,
     launch_params,
-    subvolume=None,
+    offset=(0, 0, 0),
 ):
   """Execute a FDTD simulation.
 
@@ -162,14 +162,16 @@ def fdtdz(
   .. [#meep_ref]  Oskooi, Ardavan F., et al. "MEEP: A flexible free-software package for electromagnetic simulations by the FDTD method." Computer Physics Communications 181.3 (2010): 687-702.
 
   Args:
-    epsilon: ``(3, xx, yy, zz)``-shaped array of floats representing the
-      permittivity values at the ``Ex``, ``Ey``, and ``Ez`` nodes of the Yee
-      cell respectively. We use the convention that these components are located
-      at ``(0.5, 0, 0)``, ``(0, 0.5, 0)``, and ``(0, 0, 0.5)`` respectively, for
-      a Yee cell of side-length 1. If ``subvolume`` is not ``None``, then
-      ``epsilon`` is expected to be defined only on the desired output subvolume
-      and to have the shape ``(3, x1 - x0, y1 - y0, z1 - z0)``, with values
-      outside of the subvolume assigned to those of the nearest subvolume edge.
+    epsilon: ``(3, xx0, yy0, zz0)``-shaped array of floats placed at offset
+      ``offset`` in the simulation domain, representing the permittivity values
+      at the ``Ex``, ``Ey``, and ``Ez`` nodes of the Yee cell respectively. We
+      use the convention that these components are located at ``(0.5, 0, 0)``,
+      ``(0, 0.5, 0)``, and ``(0, 0, 0.5)`` respectively, for a Yee cell of
+      side-length 1. To explicitly define permittivity values at every point in
+      the simulation, use ``epsilon.shape=(3, xx, yy, zz)`` and
+      ``offset=(0, 0, 0)``, otherwise the simulation domain size is inferred
+      from the other parameters, with permittivity values outside of ``epsilon``
+      inferred via edge padding ``epsilon``.
     dt: Scalar float representing the amount of time elapsed in one update step.
     source_field: An array of shape ``(2, 1, yy, zz)``, ``(2, xx, 1, zz)``, or
       ``(2, 2, xx, yy, 1)``-shaped array for a source at
@@ -242,16 +244,14 @@ def fdtdz(
       allowed values are ``(3, 7)``, ``(6, 0)``, ``(7, 0)``, ``(7, 5)``, and
       ``(8, 0)``. Recommended to use the latest compute capability kernel
       possible that does not exceed the compute capability of the device.
-    subvolume: ``None`` or ``((x0, y0, z0), (x1, y1, z1))`` integers denoting
-      that only the subdomain contained within ``x0 <= x < x1``,
-      ``y0 <= y < y1``, and ``z0 <= z < z1`` is to be returned.
+    offset: ``(x0, y0, z0)`` integers denoting the placement of ``epsilon``
+      as well as the desired output subvolume in the simulation domain.
 
   Returns:
-    ``(n, 3, xx, yy, zz)`` (or ``(n, 3, x1 - x0, y1 - y0, z1 - z0)`` if
-    ``subvolume`` is not ``None``) array of floats representing ``n`` output
-    fields, where each output field consists of the values of the ``Ex``,
-    ``Ey``, and ``Ez`` node (in that order) over the simulation domain, at a
-    specific update step.
+    ``(n, 3, xx0, yy0, zz0)`` array of field values in the subdomain defined
+    by ``epsilon.shape`` and ``offset`` representing ``n`` output fields,
+    where each output field consists of the values of the ``Ex``, ``Ey``, and
+    ``Ez`` node (in that order) at the update steps given by ``output_steps``.
 
   """
   total_pml_width = pml_widths[0] + pml_widths[1]
@@ -267,22 +267,16 @@ def fdtdz(
 
   zz = ((128 if use_reduced_precision else 64) -
         (pml_widths[0] + pml_widths[1]))
+  _, xx, yy = absorption_mask.shape
 
-  if subvolume is None:
-    if not (epsilon.ndim == 4 and epsilon.shape[0] == 3 and
-            epsilon.shape[3] == zz):
-      raise ValueError(f"epsilon must have shape (3, xx, yy, zz) "
-                       f"with zz == {zz} but instead got {epsilon.shape}.")
-    _, xx, yy, _ = epsilon.shape
-  else:
-    if not (epsilon.ndim == 4 and epsilon.shape[0] == 3 and
-            epsilon.shape[1] == subvolume[1][0] - subvolume[0][0] and
-            epsilon.shape[2] == subvolume[1][1] - subvolume[0][1] and
-            epsilon.shape[3] == subvolume[1][2] - subvolume[0][2]):
-      raise ValueError(f"``epsilon`` must have shape (3, xx, yy, zz) "
-                       f"corresponding to ``subvolume`` which is {subvolume}, "
-                       f"but got a shape of {epsilon.shape}.")
-    _, xx, yy = absorption_mask.shape
+  if not (epsilon.ndim == 4 and epsilon.shape[0] == 3 and
+          epsilon.shape[1] + offset[0] <= xx and
+          epsilon.shape[2] + offset[1] <= yy and
+          epsilon.shape[3] + offset[2] <= zz):
+    raise ValueError(f"``epsilon`` must have shape (3, xx0, yy0, zz0) which "
+                     f"fits inside a domain of shape {(xx, yy, zz)}, "
+                     f"but instead got ``epsilon.shape`` of {epsilon.shape} "
+                     f"with ``offset`` of {offset}.")
 
   if not ((_is_source_type(source_field, "x") and
            source_field.shape == (2, 1, yy, zz)) or
@@ -319,14 +313,14 @@ def fdtdz(
 
     pml_widths = (pml_widths[0] - 1, pml_widths[1] + 1)
 
-    if subvolume is not None:
+    if epsilon.shape[3] < zz:
       # Unfortunately, because we selectively roll the Ez values only after the
-      # simulation, when using an output subvolume, we need an extra layer of
-      # values along z.
-      subvolume = (
-          (subvolume[0][1], subvolume[0][0], zz - subvolume[1][2] - 1),
-          (subvolume[1][1], subvolume[1][0], zz - subvolume[0][2]),
-      )
+      # simulation, we need an extra layer of values along z.
+      if offset[2] == 0:
+        raise ValueError(f"``offset[2] == 0`` is not supported for "
+                         f"``epsilon.shape[3] < zz`` and "
+                         f"``source_field.shape == (2, 1, yy, zz)``.")
+      epsilon = jnp.pad(epsilon, ((0, 0), (0, 0), (0, 0), (1, 0)), mode="edge")
 
     try:
       out = fdtdz(
@@ -356,21 +350,10 @@ def fdtdz(
     out = out[:, (1, 0, 2), ...]
     out = _flip_roll_component(
         out, component=2, splitaxis=1, flipaxis=4, scalez=-1)
-    if subvolume is not None:
+    if epsilon.shape[3] < zz:
       # Need to eliminate the extra subvolume along z.
       out = out[..., :-1]
     return out
-
-    # # TODO: Remove.
-    # if subvolume is None:
-    #   return out
-    # else:
-    #   return out[:,
-    #              :,
-    #              subvolume[0][0]:subvolume[1][0],
-    #              subvolume[0][1]:subvolume[1][1],
-    #              subvolume[0][2]:subvolume[1][2]]
-    # return out
 
   # TODO: Consider putting this shape logic and shape checking above the "x"
   # transposition code.
@@ -417,13 +400,10 @@ def fdtdz(
   pxx, pyy = _padded_domain_shape((xx, yy), launch_params)
 
   denom = 1 / dt + absorption_mask / 2
-  if subvolume is None:
-    cbuffer = 1 / (epsilon * denom[..., None])
-  else:
-    cbuffer = 1 / (epsilon * denom[:,
-                                   subvolume[0][0]:subvolume[1][0],
-                                   subvolume[0][1]:subvolume[1][1],
-                                   None])
+  cbuffer = 1 / (epsilon * denom[:,
+                                 offset[0]:offset[0] + epsilon.shape[1],
+                                 offset[1]:offset[1] + epsilon.shape[2],
+                                 None])
   abslayer = ((1 / dt) - (absorption_mask / 2)) / denom
 
   # PML coefficients.
@@ -445,18 +425,6 @@ def fdtdz(
 
   dirname = os.path.join(os.path.dirname(sys.modules[__name__].__file__),
                          "ptx")
-
-  # Transfer the subvolume indices to the coordinate system shifted by
-  # ``_NUM_PAD_CELLS`` along both x- and y-axes.
-  if subvolume is None:
-    ranges = ((0, xx + 2 * _NUM_PAD_CELLS),
-              (0, yy + 2 * _NUM_PAD_CELLS),
-              (0, zz))
-  else:
-    (x0, y0, z0), (x1, y1, z1) = subvolume
-    ranges = ((x0, x1 + 2 * _NUM_PAD_CELLS),
-              (y0, y1 + 2 * _NUM_PAD_CELLS),
-              (z0, z1))
 
   kwargs = {
       "hmat": dt,
@@ -480,26 +448,10 @@ def fdtdz(
       "withshared": True,
       "withupdate": True,
       "use_reduced_precision": use_reduced_precision,
-      "ranges": ranges,
+      "subvolume_offset": offset,
+      "subvolume_size": epsilon.shape[1:],
+      "volume_size": absorption_mask.shape[1:3] + (zz,),
   }
-
-  # if subvolume is None:
-  #   cbuffer = jnp.pad(cbuffer,
-  #                     ((0, 0),
-  #                      (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
-  #                      (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
-  #                      (0, 0)))
-  # else:
-  # cbuffer = jnp.pad(cbuffer,
-  #                   ((0, 0),
-  #                    (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
-  #                    (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
-  #                    (0, 0)),
-  #                   mode="edge")
-  # cbuffer *= 0
-  # TODO: Need to be able to not have to pad cbuffer. The problem is, is that
-  # verification_test.cu expects it to be padded...
-  # jax.debug.print("{shape}", shape=cbuffer.shape)
 
   abslayer = jnp.pad(abslayer,
                      ((0, 0),
@@ -532,17 +484,10 @@ def fdtdz(
 
   out = fdtdz_impl(cbuffer, abslayer, srclayer, source_waveform, zcoeff,
                    **kwargs)
-
-  if subvolume is None:
-    out_xx, out_yy = xx, yy
-  else:
-    (xa, ya, _), (xb, yb, _) = subvolume
-    out_xx, out_yy = xb - xa, yb - ya
-
   return out[:,
              :,
-             _NUM_PAD_CELLS:out_xx + _NUM_PAD_CELLS,
-             _NUM_PAD_CELLS:out_yy + _NUM_PAD_CELLS,
+             _NUM_PAD_CELLS:-_NUM_PAD_CELLS,
+             _NUM_PAD_CELLS:-_NUM_PAD_CELLS,
              :]
 
 
@@ -567,8 +512,11 @@ def _internal_shapes(xx, yy, zz, **kwargs):
       "cbuffer": (3, xx, yy, 64),  # Larger than needed.
       "mask": (xx, yy // 2, 32),
       "src": (xx, yy // 2, 32) if kwargs["srctype"] == 1 else (2, xx, zz),
-      "output": ((kwargs["outnum"], 3) +
-                 tuple(b - a for a, b in kwargs["ranges"])),
+      "output": (kwargs["outnum"],
+                 3,
+                 kwargs["subvolume_size"][0] + 2 * _NUM_PAD_CELLS,
+                 kwargs["subvolume_size"][1] + 2 * _NUM_PAD_CELLS,
+                 kwargs["subvolume_size"][2]),
   }
 
 
@@ -610,12 +558,15 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
       kwargs["srcpos"],
       kwargs["outstart"],
       kwargs["outinterval"],
-      kwargs["ranges"][0][0],
-      kwargs["ranges"][0][1],
-      kwargs["ranges"][1][0],
-      kwargs["ranges"][1][1],
-      kwargs["ranges"][2][0],
-      kwargs["ranges"][2][1],
+      kwargs["subvolume_offset"][0],
+      kwargs["subvolume_offset"][1],
+      kwargs["subvolume_offset"][2],
+      kwargs["subvolume_size"][0],
+      kwargs["subvolume_size"][1],
+      kwargs["subvolume_size"][2],
+      kwargs["volume_size"][0],
+      kwargs["volume_size"][1],
+      kwargs["volume_size"][2],
       kwargs["outnum"],
       kwargs["dirname"],
   )

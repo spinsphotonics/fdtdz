@@ -75,16 +75,17 @@ struct RunShape {
   };
 
   struct Out {
-    struct Range {
-      __dhce__ Range(int start, int stop) : start(start), stop(stop) {}
-      int start, stop;
-    };
-    __dhce__ Out(int start, int interval, int num, Range x, Range y, Range z)
-        : start(start), interval(interval), num(num), x(x), y(y), z(z) {}
-    const int start;     // Begin recording output at this timestep (inclusive).
-    const int interval;  // Number of timesteps between outputs.
-    const int num;       // Number of outputs to write.
-    const Range x, y, z; // Defines subvolume to output.
+    __dhce__ Out(int start, int interval, int num)
+        : start(start), interval(interval), num(num) {}
+    const int start;    // Begin recording output at this timestep (inclusive).
+    const int interval; // Number of timesteps between outputs.
+    const int num;      // Number of outputs to write.
+  };
+
+  struct Vol {
+    __dhce__ Vol(int x0, int x1, int y0, int y1, int z0, int z1)
+        : x0(x0), x1(x1), y0(y0), y1(y1), z0(z0), z1(z1) {}
+    int x0, x1, y0, y1, z0, z1;
   };
 
   __dhce__ RunShape(                                                 //
@@ -98,9 +99,9 @@ struct RunShape {
       UV blockshape, UV gridshape, int blockspacing, XY domainshape)
       : RunShape(blockshape, gridshape, blockspacing, domainshape,
                  Pml(/*n=*/0, /*zshift=*/0), Src(Src::ZSLICE, /*pos=*/0),
-                 Out(/*start=*/0, /*interval=*/0, /*num=*/0,
-                     /*x=*/Out::Range(0, 0), /*y=*/Out::Range(0, 0),
-                     /*z=*/Out::Range(0, 0))) {}
+                 Out(/*start=*/0, /*interval=*/0, /*num=*/0),
+                 /*sub=*/Vol(0,0,0,0,0,0),
+                 /*vol=*/Vol(0,0,0,0,0,0) {}
 
   const UV block, grid; // Size of the diamond at the block and grid levels.
   const int spacing;    // Delay between adjacent blocks in the grid.
@@ -108,6 +109,7 @@ struct RunShape {
   const Pml pml;        // Parameters related to the PML.
   const Src src;        // Parameters related to current sources.
   const Out out;        // Parameters related to output fields.
+  const Vol sub, vol;   // Value ranges for subvolume and volume.
 };
 
 }; // namespace defs
