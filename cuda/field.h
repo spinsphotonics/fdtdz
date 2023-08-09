@@ -8,6 +8,7 @@
 
 namespace field {
 
+using defs::RunShape;
 using defs::XY;
 using diamond::Cell;
 using diamond::ExtZIndex;
@@ -83,14 +84,14 @@ using diamond::Node;
 // }
 
 template <typename T>
-__dhce__ int ExternalElems(defs::RunShape::Vol sub, int nout, int npml) {
+__dhce__ int ExternalElems(RunShape::Vol sub, int nout, int npml) {
   int xx = sub.x1 - sub.x0 + 2 * N;
   int yy = sub.y1 - sub.y0 + 2 * N;
   int zz = sub.z1 - sub.z0;
   return xx * yy * zz * diamond::kNumXyz * nout;
 }
 
-__dhce__ int ExtNodeIndex(Node n, int outindex, defs::RunShape::Vol sub) {
+__dhce__ int ExtNodeIndex(Node n, int outindex, RunShape::Vol sub) {
   int xx = sub.x1 - sub.x0 + 2 * N;
   int yy = sub.y1 - sub.y0 + 2 * N;
   int zz = sub.z1 - sub.z0;
@@ -100,8 +101,7 @@ __dhce__ int ExtNodeIndex(Node n, int outindex, defs::RunShape::Vol sub) {
 
 template <typename T>
 __dhce__ int IntNodeIndex(Node n, int outindex, int threadpos, XY pos,
-                          XY domain, int npml, int zshift,
-                          defs::RunShape::Vol sub) {
+                          XY domain, int npml, int zshift, RunShape::Vol sub) {
   Node externalnode(n.i + pos.x - sub.x0 + N,                            //
                     n.j + pos.y - sub.y0 + N,                            //
                     ExtZIndex<T>(n.k, threadpos, npml, zshift) - sub.z0, //
@@ -114,7 +114,7 @@ __dhce__ int IntNodeIndex(Node n, int outindex, int threadpos, XY pos,
 template <typename T, typename T1>
 __dhce__ void WriteNode(const Cell<T> &cell, T1 *ptr, Node n, XY pos,
                         int outindex, int threadpos, XY domain, int npml,
-                        int zshift, defs::RunShape::Vol sub) {
+                        int zshift, RunShape::Vol sub) {
   int extzindex = ExtZIndex<T>(n.k, threadpos, npml, zshift);
   if (extzindex >= sub.z0 && extzindex < sub.z1) {
     int index =
@@ -128,7 +128,7 @@ __dhce__ void WriteNode(const Cell<T> &cell, T1 *ptr, Node n, XY pos,
 template <>
 __dh__ void WriteNode(const Cell<half2> &cell, float *ptr, Node n, XY pos,
                       int outindex, int threadpos, XY domain, int npml,
-                      int zshift, defs::RunShape::Vol sub) {
+                      int zshift, RunShape::Vol sub) {
   {
     int extzindex = ExtZIndex<half2>(n.k, threadpos, npml, zshift);
     if (extzindex >= sub.z0 && extzindex < sub.z1)
@@ -151,7 +151,7 @@ __dh__ void WriteNode(const Cell<half2> &cell, float *ptr, Node n, XY pos,
 template <typename T, typename T1>
 __dhce__ void WriteCell(const Cell<T> &cell, T1 *ptr, XY pos, int outindex,
                         int threadpos, XY domain, int npml, int zshift,
-                        bool isaux, defs::RunShape::Vol sub) {
+                        bool isaux, RunShape::Vol sub) {
 #pragma unroll
   for (int i : diamond::AllI)
 #pragma unroll
@@ -169,7 +169,7 @@ __dhce__ void WriteCell(const Cell<T> &cell, T1 *ptr, XY pos, int outindex,
 }
 
 template <typename T, typename T1>
-__dh__ void Init(T1 *ptr, defs::RunShape rs, int threadpos, defs::UV warppos,
+__dh__ void Init(T1 *ptr, RunShape rs, int threadpos, defs::UV warppos,
                  defs::UV blockpos) {
   int init =
       threadpos +

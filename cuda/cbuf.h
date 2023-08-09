@@ -28,30 +28,19 @@ using diamond::Y;
 using diamond::Z;
 
 // External buffer does not hold c-values for auxiliary threads.
-__dhce__ int ExternalElems(RunShape::Out::Range xrange,
-                           RunShape::Out::Range yrange,
-                           RunShape::Out::Range zrange) {
-  int xx = xrange.stop - xrange.start - 2 * diamond::N;
-  int yy = yrange.stop - yrange.start - 2 * diamond::N;
-  int zz = zrange.stop - zrange.start;
-  return xx * yy * zz * diamond::kNumXyz;
+__dhce__ int ExternalElems(RunShape::Vol sub) {
+  return (sub.x1 - sub.x0) * (sub.y1 - sub.y0) * (sub.z1 - sub.z0) *
+         diamond::kNumXyz;
 }
 
-__dhce__ int ExternalIndex(Node n, XY domain, int npml,
-                           RunShape::Out::Range xrange,
-                           RunShape::Out::Range yrange,
-                           RunShape::Out::Range zrange) {
-  int i = n.i - xrange.start;
-  int j = n.j - yrange.start;
-  int k = n.k - zrange.start;
-  int xx = xrange.stop - xrange.start - 2 * diamond::N;
-  int yy = yrange.stop - yrange.start - 2 * diamond::N;
-  int zz = zrange.stop - zrange.start;
+__dhce__ int ExternalIndex(Node n, XY domain, int npml, RunShape::Vol sub) {
+  int i = n.i - sub.x0;
+  int j = n.j - sub.y0;
+  int k = n.k - sub.z1;
+  int xx = sub.x1 - sub.x0;
+  int yy = sub.y1 - sub.y0;
+  int zz = sub.z1 - sub.z0;
   return k + zz * (j + yy * (i + xx * diamond::Index(n.xyz)));
-  // TODO: Remove.
-  // return n.k + ExtZz<T>(npml) *
-  //                  (n.j + domain.y * (n.i + domain.x *
-  //                  diamond::Index(n.xyz)));
 }
 
 __dhce__ int GlobalElems(XY domain) {
@@ -73,43 +62,51 @@ __dhce__ int GlobalIndex(Node n, XY domain) {
   }
 }
 
-__dhce__ int ClipToRange(int val, RunShape::Out::Range range) {
-  if (val < range.start)
-    return range.start;
-  else if (val >= range.stop)
-    return range.stop - 1;
+__dhce__ int ClipToRange(int val, int lo, int hi) {
+  if (val < lo)
+    return lo;
+  else if (val >= hi)
+    return hi - 1;
   else
     return val;
 }
 
-__dhce__ Node NearestInRangeNode(Node n, RunShape::Out::Range xrange,
-                                 RunShape::Out::Range yrange,
-                                 RunShape::Out::Range zrange) {
-  return Node(ClipToRange(n.i, xrange), //
-              ClipToRange(n.j, yrange), //
-              ClipToRange(n.k, zrange), //
+__dhce__ Node NearestNode(Node n, RunShape::Vol sub) {
+  return Node(ClipToRange(n.i, sub.x0, sub.x1), //
+              ClipToRange(n.j, sub.y0, sub.y1), //
+              ClipToRange(n.k, sub.z0, sub.z1), //
               n.ehc, n.xyz);
 }
 
-__dhce__ bool IsBorderNode(Node n, XY domain) {
-  return n.i < diamond::N || n.i >= domain.x - diamond::N || //
-         n.j < diamond::N || n.j >= domain.y - diamond::N;
+__dhce__ bool IsInside(Node n, RunShape::Vol v) {
+  return n.i >= v.x0 && n.i < v.x1 && //
+         n.j >= v.y0 && n.j < v.y1 && //
+         n.k >= v.z0 && n.k < v.z1;
 }
 
 // Write the external node `n` into the internal buffer.
 template <typename T>
-__dh__ void
-WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos, int npml,
-            int zshift, bool isaux, RunShape::Out::Range xrange,
-            RunShape::Out::Range yrange, RunShape::Out::Range zrange) {
+__dh__ void WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos,
+                        int npml, int zshift, bool isaux, RunShape::Vol sub,
+                        RunShape::Vol vol) {
   Node globalnode = n.dK(Nz * threadpos);
+  int dstindex = GlobalIndex(globalnode, domain);
+  Node externalnode = n.K(ExtZIndex<T>(n.k, threadpos, npml, zshift));
+  if (isaux) {
+    // Default value of `1` is needed to avoid branching in the update code when
+    // dealing with auxiliary thread.
+    dst[dstindex] = defs::One<T>();
+  } else if (!IsInside(externalnode, vol)) { // Outside of volume.
+    dst[dstindex] = defs::Zero<T>();
+  } else if (IsInside(externalnode, sub)) { // Inside subvolume.
+    dst[dstindex] = src[ExternalIndex(externalnode, sub)];
+  } else { // Need to infer.
+    Node nearestnode = NearestNode(externalnode, sub);
+    dst[dstindex] = src[ExternalIndex(nearestnode, sub)];
+  }
   if (IsBorderNode(n, domain)) {
     dst[GlobalIndex(globalnode, domain)] = defs::Zero<T>();
   } else {
-    Node externalnode = Node(
-        /*i=*/n.i, //  - diamond::N,
-        /*j=*/n.j, // - diamond::N,
-        /*k=*/ExtZIndex<T>(n.k, threadpos, npml, zshift), n.ehc, n.xyz);
     Node nearestnode = NearestInRangeNode(externalnode, xrange, yrange, zrange);
     dst[GlobalIndex(globalnode, domain)] =
         isaux ? defs::One<T>()
@@ -309,8 +306,7 @@ __dh__ void Convert(T1 *src, T *dst, RunShape rs, int zshift, int threadpos,
         for (diamond::Xyz xyz : diamond::AllXyz)
           cbuf::WriteGlobal(src, dst, diamond::Node(i, j, k, diamond::E, xyz),
                             rs.domain, threadpos, rs.pml.n, zshift,
-                            defs::IsAux(threadpos, rs.pml.n), rs.out.x,
-                            rs.out.y, rs.out.z);
+                            defs::IsAux(threadpos, rs.pml.n), rs.sub, rs.vol);
 }
 
 } // namespace cbuf
