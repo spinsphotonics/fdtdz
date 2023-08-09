@@ -75,7 +75,7 @@ int FieldIndex(Node n, int x, int y) {
   return n.i + x * (n.j + y * diamond::Index(n.xyz));
 }
 
-// Defines a referenece simulation.
+// Defines a reference simulation.
 template <typename T> struct SimParams {
   SimParams(int x, int y, int z, T *abs, T *mat, ZCoeff<T> *zcoeff, T *wf0,
             T *wf1, T hmat, Node srcnode)

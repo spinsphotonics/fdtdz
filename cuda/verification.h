@@ -29,12 +29,14 @@ using diamond::Xyz;
 
 template <typename T, typename T1>
 void MatCopy(T1 *src, T1 *dst, RunShape rs, int refxx, int refyy, int refzz) {
-  for (int i = rs.out.x.start; i < rs.out.x.stop; ++i)
-    for (int j = rs.out.y.start; j < rs.out.y.stop; ++j)
+  for (int i = rs.out.x.start + diamond::N; i < rs.out.x.stop - diamond::N; ++i)
+    for (int j = rs.out.y.start + diamond::N; j < rs.out.y.stop - diamond::N;
+         ++j)
       for (int k = rs.out.z.start; k < rs.out.z.stop; ++k)
         for (Xyz xyz : diamond::AllXyz) {
-          dst[cbuf::ExternalIndex(Node(i, j, k, diamond::C, xyz), rs.domain,
-                                  rs.pml.n, rs.out.x, rs.out.y, rs.out.z)] =
+          dst[cbuf::ExternalIndex(
+              Node(i - diamond::N, j - diamond::N, k, diamond::C, xyz),
+              rs.domain, rs.pml.n, rs.out.x, rs.out.y, rs.out.z)] =
               src[reference::FieldIndex(Node(i, j, k, diamond::C, xyz), refxx,
                                         refyy, refzz)];
         }

@@ -446,6 +446,8 @@ def fdtdz(
   dirname = os.path.join(os.path.dirname(sys.modules[__name__].__file__),
                          "ptx")
 
+  # Transfer the subvolume indices to the coordinate system shifted by
+  # ``_NUM_PAD_CELLS`` along both x- and y-axes.
   if subvolume is None:
     ranges = ((0, xx + 2 * _NUM_PAD_CELLS),
               (0, yy + 2 * _NUM_PAD_CELLS),
@@ -481,19 +483,23 @@ def fdtdz(
       "ranges": ranges,
   }
 
-  if subvolume is None:
-    cbuffer = jnp.pad(cbuffer,
-                      ((0, 0),
-                       (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
-                       (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
-                       (0, 0)))
-  else:
-    cbuffer = jnp.pad(cbuffer,
-                      ((0, 0),
-                       (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
-                       (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
-                       (0, 0)),
-                      mode="edge")
+  # if subvolume is None:
+  #   cbuffer = jnp.pad(cbuffer,
+  #                     ((0, 0),
+  #                      (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
+  #                      (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS),
+  #                      (0, 0)))
+  # else:
+  # cbuffer = jnp.pad(cbuffer,
+  #                   ((0, 0),
+  #                    (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
+  #                    (_NUM_PAD_CELLS, _NUM_PAD_CELLS),
+  #                    (0, 0)),
+  #                   mode="edge")
+  # cbuffer *= 0
+  # TODO: Need to be able to not have to pad cbuffer. The problem is, is that
+  # verification_test.cu expects it to be padded...
+  # jax.debug.print("{shape}", shape=cbuffer.shape)
 
   abslayer = jnp.pad(abslayer,
                      ((0, 0),
@@ -524,7 +530,6 @@ def fdtdz(
       ],
       axis=-1)
 
-  jax.debug.print("cbuffer debug print\n{cbuffer}", cbuffer=cbuffer)
   out = fdtdz_impl(cbuffer, abslayer, srclayer, source_waveform, zcoeff,
                    **kwargs)
 
@@ -534,29 +539,11 @@ def fdtdz(
     (xa, ya, _), (xb, yb, _) = subvolume
     out_xx, out_yy = xb - xa, yb - ya
 
-  print(f"{out_xx}, {out_yy}")
-  print(f"{out.shape}")
-  print(f"{subvolume}")
   return out[:,
              :,
              _NUM_PAD_CELLS:out_xx + _NUM_PAD_CELLS,
              _NUM_PAD_CELLS:out_yy + _NUM_PAD_CELLS,
              :]
-
-  # # TODO: Remove or change or something.
-  # if subvolume is None:
-  #   return out
-  # else:
-  #   return out[:,
-  #              :,
-  #              subvolume[0][0]:subvolume[1][0],
-  #              subvolume[0][1]:subvolume[1][1],
-  #              subvolume[0][2]:subvolume[1][2]]
-  # return out[:,
-  #            :,
-  #            _NUM_PAD_CELLS:xx + _NUM_PAD_CELLS,
-  #            _NUM_PAD_CELLS:yy + _NUM_PAD_CELLS,
-  #            :]
 
 
 def fdtdz_impl(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
@@ -575,10 +562,6 @@ def _internal_shapes(xx, yy, zz, **kwargs):
   kernel, _not_ to those provided in the more user-friendly ``fdtdz()``.
 
   """
-  # TODO: Remove.
-  print(f"ranges: {kwargs['ranges']}")
-  print(
-      f"output_shapes: {((kwargs['outnum'], 3) + tuple(b - a for a, b in kwargs['ranges']))}")
   return {
       "buffer": (6, xx, yy, 64),  # Larger than needed.
       "cbuffer": (3, xx, yy, 64),  # Larger than needed.
