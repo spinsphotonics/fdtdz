@@ -334,14 +334,13 @@ __device__ void WriteOutput(Cell<T> &cell, XYT domainpos, int threadpos,
       // diamond::IsDiamondCompletelyInDomain(XY(domainpos.x, domainpos.y),
       //                                      rs.domain) &&
       diamond::IsDiamondCompletelyInSubdomainXY(XY(domainpos.x, domainpos.y),
-                                                rs.out.x, rs.out.y) &&
+                                                rs.sub) &&
       domainpos.t >= rs.out.start &&                               //
       domainpos.t < rs.out.start + rs.out.num * rs.out.interval && //
       (domainpos.t - rs.out.start) % rs.out.interval == 0) {
     int outindex = (domainpos.t - rs.out.start) / rs.out.interval;
     field::WriteCell(cell, outptr, XY(domainpos.x, domainpos.y), outindex,
-                     threadpos, rs.domain, rs.pml.n, zshift, isaux, rs.out.x,
-                     rs.out.y, rs.out.z);
+                     threadpos, rs.domain, rs.pml.n, zshift, isaux, rs.sub);
   }
 }
 

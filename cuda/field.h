@@ -13,6 +13,7 @@ using defs::XY;
 using diamond::Cell;
 using diamond::ExtZIndex;
 using diamond::ExtZz;
+using diamond::N;
 using diamond::Node;
 
 // template <typename T>
@@ -107,7 +108,7 @@ __dhce__ int IntNodeIndex(Node n, int outindex, int threadpos, XY pos,
                     ExtZIndex<T>(n.k, threadpos, npml, zshift) - sub.z0, //
                     n.ehc,                                               //
                     n.xyz);
-  return ExtNodeIndex(externalnode, outindex, xrange, yrange, zrange);
+  return ExtNodeIndex(externalnode, outindex, sub);
 }
 
 // Write a specific node to the output buffer.

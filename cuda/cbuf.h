@@ -33,7 +33,7 @@ __dhce__ int ExternalElems(RunShape::Vol sub) {
          diamond::kNumXyz;
 }
 
-__dhce__ int ExternalIndex(Node n, XY domain, int npml, RunShape::Vol sub) {
+__dhce__ int ExternalIndex(Node n, RunShape::Vol sub) {
   int i = n.i - sub.x0;
   int j = n.j - sub.y0;
   int k = n.k - sub.z1;
@@ -84,35 +84,32 @@ __dhce__ bool IsInside(Node n, RunShape::Vol v) {
          n.k >= v.z0 && n.k < v.z1;
 }
 
+template <typename T>
+__dh__ T GlobalValue(T *ptr, Node externalnode, bool isaux, RunShape::Vol sub,
+                     RunShape::Vol vol) {
+  if (isaux) {
+    // Default value of `1` is needed to avoid branching in the update code when
+    // dealing with auxiliary thread.
+    return defs::One<T>();
+  } else if (!IsInside(externalnode, vol)) { // Outside of volume.
+    return defs::Zero<T>();
+  } else if (IsInside(externalnode, sub)) { // Inside subvolume.
+    return ptr[ExternalIndex(externalnode, sub)];
+  } else { // Need to infer.
+    Node nearestnode = NearestNode(externalnode, sub);
+    return ptr[ExternalIndex(nearestnode, sub)];
+  }
+}
+
 // Write the external node `n` into the internal buffer.
 template <typename T>
 __dh__ void WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos,
                         int npml, int zshift, bool isaux, RunShape::Vol sub,
                         RunShape::Vol vol) {
-  Node globalnode = n.dK(Nz * threadpos);
-  int dstindex = GlobalIndex(globalnode, domain);
   Node externalnode = n.K(ExtZIndex<T>(n.k, threadpos, npml, zshift));
-  if (isaux) {
-    // Default value of `1` is needed to avoid branching in the update code when
-    // dealing with auxiliary thread.
-    dst[dstindex] = defs::One<T>();
-  } else if (!IsInside(externalnode, vol)) { // Outside of volume.
-    dst[dstindex] = defs::Zero<T>();
-  } else if (IsInside(externalnode, sub)) { // Inside subvolume.
-    dst[dstindex] = src[ExternalIndex(externalnode, sub)];
-  } else { // Need to infer.
-    Node nearestnode = NearestNode(externalnode, sub);
-    dst[dstindex] = src[ExternalIndex(nearestnode, sub)];
-  }
-  if (IsBorderNode(n, domain)) {
-    dst[GlobalIndex(globalnode, domain)] = defs::Zero<T>();
-  } else {
-    Node nearestnode = NearestInRangeNode(externalnode, xrange, yrange, zrange);
-    dst[GlobalIndex(globalnode, domain)] =
-        isaux ? defs::One<T>()
-              : src[ExternalIndex(nearestnode, domain, npml, xrange, yrange,
-                                  zrange)];
-  }
+  Node globalnode = n.dK(Nz * threadpos);
+  dst[GlobalIndex(globalnode, domain)] =
+      GlobalValue(src, externalnode, isaux, sub, vol);
 }
 
 #ifndef __OMIT_HALF2__
@@ -122,30 +119,12 @@ __dh__ void WriteGlobal(float *src, half2 *dst, Node n, XY domain,
                         RunShape::Out::Range xrange,
                         RunShape::Out::Range yrange,
                         RunShape::Out::Range zrange) {
+  Node enodelo = n.K(ExtZIndex<half2>(n.k, threadpos, npml, zshift));
+  Node enodehi = n.K(ExtZIndex<half2>(n.k + Nz, threadpos, npml, zshift));
   Node globalnode = n.dK(Nz * threadpos);
-  // if (n.i < diamond::N || n.j < diamond::N) {
-  if (IsBorderNode(n, domain)) {
-    dst[GlobalIndex(globalnode, domain)] = defs::Zero<half2>();
-  } else {
-    Node shiftednode(n.i, // - diamond::N,
-                     n.j, //  - diamond::N,
-                     n.k, n.ehc, n.xyz);
-    Node enodelo = NearestInRangeNode(
-        shiftednode.K(ExtZIndex<half2>(shiftednode.k, threadpos, npml, zshift)),
-        xrange, yrange, zrange);
-    Node enodehi =
-        NearestInRangeNode(shiftednode.K(ExtZIndex<half2>(
-                               shiftednode.k + Nz, threadpos, npml, zshift)),
-                           xrange, yrange, zrange);
-    dst[GlobalIndex(globalnode, domain)] =
-        isaux ? defs::One<half2>() // Default value of `1` is needed to avoid
-                                   // branching in the update code when dealing
-                                   // with auxiliary thread.
-              : __floats2half2_rn(src[ExternalIndex(enodelo, domain, npml,
-                                                    xrange, yrange, zrange)],
-                                  src[ExternalIndex(enodehi, domain, npml,
-                                                    xrange, yrange, zrange)]);
-  }
+  dst[GlobalIndex(globalnode, domain)] =
+      __floats2half2_rn(GlobalValue(src, enodelo, isaux, sub, vol),
+                        GlobalValue(src, enodehi, isaux, sub, vol));
 }
 #endif
 
