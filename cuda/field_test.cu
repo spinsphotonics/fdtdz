@@ -18,7 +18,7 @@ TEST(Field, Field) {
   int npml = 5;
   int zshift = 10;
   int nout = 4;
-  defs::RunShape::Vol sub(0, domain.x, 0, domain.y, 0,
+  defs::RunShape::Vol sub(N, domain.x - N, N, domain.y - N, 0,
                           diamond::ExtZz<float>(npml));
 
   testutils::Array<int> arr(ExternalElems<int>(sub, nout, npml));
@@ -40,7 +40,7 @@ TEST(Field, FieldHalf2) {
   int nout = 4;
   int npml = 5;
   int zshift = 7;
-  defs::RunShape::Vol sub(0, domain.x, 0, domain.y, 0,
+  defs::RunShape::Vol sub(N, domain.x - N, N, domain.y - N, 0,
                           diamond::ExtZz<half2>(npml));
 
   testutils::Array<float> arr(ExternalElems<half2>(sub, nout, npml));
