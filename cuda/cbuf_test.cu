@@ -49,11 +49,11 @@ int GlobalNodeHash(Node n, XY domain) {
 void WriteToGlobalTest(XY domain, int npml, int zshift) {
   RunShape::Vol //
       sub(N, domain.x - N, N, domain.y - N, 0, ExtZz<int>(npml)),
-      vol(0, domain.x, 0, domain.y, 0, ExtZz<int>(npml));
+      vol(N, domain.x - N, N, domain.y - N, 0, ExtZz<int>(npml));
   testutils::Array<int> ext(ExternalElems(sub));
-  for (int i = 0; i < domain.x; ++i)
-    for (int j = 0; j < domain.y; ++j)
-      for (int k = 0; k < ExtZz<int>(npml); ++k)
+  for (int i = sub.x0; i < sub.x1; ++i)
+    for (int j = sub.y0; j < sub.y1; ++j)
+      for (int k = sub.z0; k < sub.z1; ++k)
         for (Xyz xyz : diamond::AllXyz) {
           Node n(i, j, k, diamond::E, xyz);
           ext[ExternalIndex(n, sub)] = GlobalNodeHash(n, domain);
@@ -80,12 +80,14 @@ void WriteToGlobalTest(XY domain, int npml, int zshift) {
             int expected = IsAux(threadpos, npml)
                                ? defs::One<int>()
                                : GlobalNodeHash(extnode, domain);
-            EXPECT_EQ(glb[GlobalIndex(glbnode, domain)], expected);
+            EXPECT_EQ(glb[GlobalIndex(glbnode, domain)], expected)
+                << "glbnode = " << glbnode;
           }
 }
 
 TEST(CBuf, WriteToGlobal) {
-  WriteToGlobalTest(/*domain=*/XY(3, 4), /*npml=*/7, /*zshift=*/10);
+  WriteToGlobalTest(/*domain=*/XY(3 + 2 * N, 4 + 2 * N), /*npml=*/7,
+                    /*zshift=*/10);
 }
 
 // Need to make numbers smaller so that they don't exceed the precision limit
