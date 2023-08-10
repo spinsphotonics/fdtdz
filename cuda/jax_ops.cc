@@ -27,7 +27,7 @@ PYBIND11_MODULE(gpu_ops, m) {
   m.def("registrations", &Registrations);
   m.def(
       "build_kernel_descriptor",
-      [](float hmat, int capability, bool withglobal, bool withshared,
+      [](float dt, int capability, bool withglobal, bool withshared,
          bool withupdate, int blocku, int blockv, int gridu, int gridv,
          int blockspacing, int domainx, int domainy, int npml, int zshift,
          int srctype, int srcpos, int outstart, int outinterval, int sx0,
@@ -35,7 +35,7 @@ PYBIND11_MODULE(gpu_ops, m) {
          int outnum, std::string dirname) {
         return pybind11::bytes(
             kernel_jax::KernelDescriptor::ToString(kernel_jax::KernelDescriptor(
-                std::string(dirname), capability, hmat,
+                std::string(dirname), capability, dt,
                 RunShape(UV(blocku, blockv), UV(gridu, gridv), blockspacing,
                          XY(domainx, domainy), RunShape::Pml(npml, zshift),
                          RunShape::Src(

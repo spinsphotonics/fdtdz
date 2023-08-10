@@ -404,13 +404,18 @@ def fdtdz(
   # domain shape abide by rules related to ``launch_params``.
   pxx, pyy = _padded_domain_shape((xx, yy), launch_params)
 
+  # TODO: Remove when this is in cuda code.
   # TODO: Now need to move this to cuda code.
-  denom = 1 / dt + absorption_mask / 2
-  cbuffer = 1 / (epsilon * denom[:,
-                                 offset[0]:offset[0] + epsilon.shape[1],
-                                 offset[1]:offset[1] + epsilon.shape[2],
-                                 None])
-  abslayer = ((1 / dt) - (absorption_mask / 2)) / denom
+  # denom = 1 / dt + absorption_mask / 2
+  # cbuffer = 1 / (epsilon * denom[:,
+  #                                offset[0]:offset[0] + epsilon.shape[1],
+  #                                offset[1]:offset[1] + epsilon.shape[2],
+  #                                None])
+  # abslayer = ((1 / dt) - (absorption_mask / 2)) / denom
+
+  # Convert to update coefficient, will be scaled by the absorption mask inside
+  # the simulation kernel.
+  cbuffer = 1 / epsilon
 
   # PML coefficients.
   pml_b = jnp.exp(-((pml_sigma / pml_kappa) + pml_alpha) * dt)
@@ -433,7 +438,7 @@ def fdtdz(
                          "ptx")
 
   kwargs = {
-      "hmat": dt,
+      "dt": dt,
       "capability": compute_capability[0] * 10 + compute_capability[1],
       "blocku": block[0],
       "blockv": block[1],
@@ -548,7 +553,7 @@ def _default_layouts(*shapes):
 def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
                     **kwargs):
   opaque = gpu_ops.build_kernel_descriptor(
-      kwargs["hmat"],
+      kwargs["dt"],
       kwargs["capability"],
       kwargs["withglobal"],
       kwargs["withshared"],

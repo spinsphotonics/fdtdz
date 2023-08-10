@@ -80,7 +80,7 @@ void SpacingBenchmark(int timesteps, int repeats, std::vector<int> spacings,
     // /*z=*/RunShape::Out::Range(0, diamond::ExtZz<half2>(npml))));
     ASSERT_TRUE(scanner::IsValidRunShape(rs)) << "Invalid run shape: " << rs;
 
-    KernelAlloc<half2, float> alloc(rs, /*hmat=*/defs::One<float>());
+    KernelAlloc<half2, float> alloc(rs, /*dt=*/defs::One<float>());
     std::cout << spacing << ": ";
     BenchmarkKernel<half2>(
         kernel_precompiled::MakePreCompiledKernelType<half2>(

@@ -35,7 +35,7 @@ inline void ApplyKernel(cudaStream_t stream, void **buffers, const char *opaque,
     throw std::invalid_argument("Invalid run shape!");
 
   kernel::KernelInputs<float> kernelinputs(
-      /*hmat=*/kd.hmat, // /*hmat=*/reinterpret_cast<float *>(buffers[0])[0],
+      /*dt=*/kd.dt,
       /*cbuffer=*/reinterpret_cast<float *>(buffers[0]),
       /*abslayer=*/reinterpret_cast<float *>(buffers[1]),
       /*srclayer=*/reinterpret_cast<float *>(buffers[2]),

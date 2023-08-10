@@ -63,6 +63,7 @@ int ZMaskNodeHash(XY pos, Xyz xyz) {
 }
 
 void TestZMask(XY domain) {
+  int dt = 1;
   testutils::Array<int> externalarr(ZMask<int>::ExternalElems(domain));
   for (int i = 0; i < domain.x; ++i)
     for (int j = 0; j < domain.y; ++j)
@@ -76,7 +77,7 @@ void TestZMask(XY domain) {
   for (int i = 0; i < domain.x; ++i)
     for (int j = 0; j < domain.y; j += 2)
       ZMask<int>::WriteGlobal(externalarr.Ptr(), globalarr.Ptr(), XY(i, j),
-                              domain);
+                              domain, dt);
 
   for (int x = 0; x < domain.x; ++x)
     for (int y = 0; y < domain.y; y += 2) {

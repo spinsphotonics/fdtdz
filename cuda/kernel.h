@@ -26,12 +26,12 @@ using diamond::H;
 
 // Buffer inputs to kernel.
 template <typename T1> struct KernelInputs {
-  KernelInputs(T1 hmat, T1 *cbuffer, T1 *abslayer, T1 *srclayer, T1 *waveform,
+  KernelInputs(T1 dt, T1 *cbuffer, T1 *abslayer, T1 *srclayer, T1 *waveform,
                T1 *zcoeff)
-      : hmat(hmat), cbuffer(cbuffer), abslayer(abslayer), srclayer(srclayer),
+      : dt(dt), cbuffer(cbuffer), abslayer(abslayer), srclayer(srclayer),
         waveform(waveform), zcoeff(zcoeff) {}
 
-  T1 hmat;
+  T1 dt;
   T1 *cbuffer, *abslayer, *srclayer, *waveform, *zcoeff;
 };
 
@@ -92,7 +92,8 @@ __dhce__ void ConvertInputs(KernelArgs<T, T1> args, RunShape rs, int t, UV w,
   buffer::Init(args.internal.buffer, rs, t, w, b);
   cbuf::Convert(args.inputs.cbuffer, args.internal.cbuffer, rs, rs.pml.zshift,
                 t, w, b);
-  slice::ConvertMask(args.inputs.abslayer, args.internal.mask, rs, t, w, b);
+  slice::ConvertMask(args.inputs.abslayer, args.internal.mask, rs, t, w, b,
+                     args.inputs.dt);
   if (rs.src.type == RunShape::Src::ZSLICE) {
     slice::ConvertZSrc(args.inputs.srclayer, args.internal.src, rs.src.pos, rs,
                        t, w, b);
@@ -129,8 +130,8 @@ __global__ void SimulationKernel(KernelArgs<T, T1> args) {
   const bool isaux = defs::IsAux(t, rs);
   const int timesteps = defs::NumTimeSteps(rs.out);
   const int numsteps = scanner::NumSteps(timesteps, rs);
-  const T hmat =
-      isaux ? defs::One<T>() : defs::Convert<T, T1>(-args.inputs.hmat);
+  const T neg_dt =
+      isaux ? defs::One<T>() : defs::Convert<T, T1>(-args.inputs.dt);
 
   // Convert inputs to internal formats.
   ConvertInputs(args, rs, t, w, b);
@@ -177,7 +178,7 @@ __global__ void SimulationKernel(KernelArgs<T, T1> args) {
     }
 
     if (WithUpdate) {
-      update::Update(cell, zcoeff, hmat, Npml, isaux, E);
+      update::Update(cell, zcoeff, neg_dt, Npml, isaux, E);
     }
     diamond::Shift(cell, H);
     __syncthreads(); // Separates global E-field load and store.
@@ -216,7 +217,7 @@ __global__ void SimulationKernel(KernelArgs<T, T1> args) {
     // H update
     if (WithUpdate) {
       update::Scale(cell, zmask, zcoeff, isaux, H);
-      update::Update(cell, zcoeff, hmat, Npml, isaux, H);
+      update::Update(cell, zcoeff, neg_dt, Npml, isaux, H);
     }
 
     diamond::Shift(cell, E);

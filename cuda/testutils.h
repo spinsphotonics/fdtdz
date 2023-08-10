@@ -344,18 +344,18 @@ template <typename T> void Fill(T val, T *ptr, int n) {
 // Allocate memory for a reference simulation.
 template <typename T> struct SimAlloc {
 public:
-  SimAlloc(int x, int y, int z, int t, T mat0, Node srcnode)
+  SimAlloc(int x, int y, int z, int t, T dt, Node srcnode)
       : abs_(FieldElems(x, y)),    //
         mat_(FieldElems(x, y, z)), //
         zcoeff_(z),                //
         wf0_(t + 1),               //
         wf1_(t + 1),               //
         simparams_(x, y, z, abs_.Ptr(), mat_.Ptr(), zcoeff_.Ptr(), wf0_.Ptr(),
-                   wf1_.Ptr(), mat0, srcnode) {
+                   wf1_.Ptr(), dt, srcnode) {
 
     // Some standard values.
-    Fill(One<T>(), simparams_.abs, FieldElems(x, y));
-    Fill(mat0, simparams_.mat, FieldElems(x, y, z));
+    Fill(Zero<T>(), simparams_.abs, FieldElems(x, y));
+    Fill(One<T>(), simparams_.mat, FieldElems(x, y, z));
     Fill(ZCoeff<T>{One<T>(), Zero<T>(), Zero<T>(), //
                    One<T>(), Zero<T>(), Zero<T>()},
          simparams_.zcoeff, z);
@@ -392,7 +392,7 @@ template <typename T, typename T1> struct KernelAlloc {
   static constexpr const int Nout = 2;
 
 public:
-  KernelAlloc(RunShape rs, T1 hmat)                        //
+  KernelAlloc(RunShape rs, T1 dt)                          //
       : intbuffer_(buffer::GlobalElems(rs)),               //
         intcbuffer_(cbuf::GlobalElems(rs.domain)),         //
         intmask_(slice::ZMask<T>::GlobalElems(rs.domain)), //
@@ -411,7 +411,7 @@ public:
         args_(rs,
               KernelInternal(intbuffer_.Ptr(), intcbuffer_.Ptr(),
                              intmask_.Ptr(), intsrc_.Ptr()),
-              KernelInputs(hmat, extcbuffer_.Ptr(), extabslayer_.Ptr(),
+              KernelInputs(dt, extcbuffer_.Ptr(), extabslayer_.Ptr(),
                            extsrclayer_.Ptr(), extwaveform_.Ptr(),
                            zcoeff_.Ptr()),
               out_.Ptr()) {}
@@ -471,13 +471,13 @@ void BenchmarkKernel(void *kernel, kernel::KernelArgs<T, T1> args, RunShape rs,
 namespace kernel_jax {
 
 bool operator==(const KernelDescriptor &a, const KernelDescriptor &b) {
-  return a.dirname == b.dirname && a.hmat == b.hmat && a.rs == b.rs &&
+  return a.dirname == b.dirname && a.dt == b.dt && a.rs == b.rs &&
          a.withglobal == b.withglobal && a.withshared == b.withshared &&
          a.withupdate == b.withupdate;
 }
 
 std::ostream &operator<<(std::ostream &os, const KernelDescriptor kd) {
-  os << "(" << kd.dirname << ", " << kd.hmat << ", " << kd.rs << ", "
+  os << "(" << kd.dirname << ", " << kd.dt << ", " << kd.rs << ", "
      << kd.withglobal << ", " << kd.withshared << ", " << kd.withupdate << ")";
   return os;
 }

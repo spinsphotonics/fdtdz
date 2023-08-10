@@ -105,7 +105,7 @@ void RunKernel(RunShape rs, T1 *outptr, reference::SimParams<T1> sp, int nlo,
 
   // void *kernel = (void *)kernel::SimulationKernel<T, T1, Npml>;
 
-  kernel::KernelAlloc<T, T1> alloc(rs, /*hmat=*/sp.hmat);
+  kernel::KernelAlloc<T, T1> alloc(rs, /*dt=*/sp.dt);
   kernel::KernelArgs<T, T1> args = alloc.Args();
 
   // Convert inputs.

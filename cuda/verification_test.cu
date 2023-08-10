@@ -146,7 +146,7 @@ private:
 TEST(Verification, PointSource) {
   Node srcnode(7, 7, 17, E, X);
   PointSim<float, float, /*Npml=*/0> sim(/*mat0=*/1.0f, srcnode,
-                                         /*timestep=*/8,
+                                         /*timestep=*/1,
                                          /*nlo=*/0, /*nhi=*/0);
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.0f;
