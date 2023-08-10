@@ -36,7 +36,7 @@ __dhce__ int ExternalElems(RunShape::Vol sub) {
 __dhce__ int ExternalIndex(Node n, RunShape::Vol sub) {
   int i = n.i - sub.x0;
   int j = n.j - sub.y0;
-  int k = n.k - sub.z1;
+  int k = n.k - sub.z0;
   int xx = sub.x1 - sub.x0;
   int yy = sub.y1 - sub.y0;
   int zz = sub.z1 - sub.z0;
