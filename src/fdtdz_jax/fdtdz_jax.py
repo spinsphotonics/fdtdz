@@ -404,6 +404,7 @@ def fdtdz(
   # domain shape abide by rules related to ``launch_params``.
   pxx, pyy = _padded_domain_shape((xx, yy), launch_params)
 
+  # TODO: Now need to move this to cuda code.
   denom = 1 / dt + absorption_mask / 2
   cbuffer = 1 / (epsilon * denom[:,
                                  offset[0]:offset[0] + epsilon.shape[1],
