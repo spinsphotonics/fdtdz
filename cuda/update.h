@@ -333,8 +333,9 @@ __device__ void WriteOutput(Cell<T> &cell, XYT domainpos, int threadpos,
   if (
       // diamond::IsDiamondCompletelyInDomain(XY(domainpos.x, domainpos.y),
       //                                      rs.domain) &&
-      diamond::IsDiamondCompletelyInSubdomainXY(XY(domainpos.x, domainpos.y),
-                                                rs.sub) &&
+      diamond::IsDiamondCompletelyInXY(XY(domainpos.x, domainpos.y),
+                                       rs.sub.x0 - N, rs.sub.x1 + N,
+                                       rs.sub.y0 - N, rs.sub.y1 + N) &&
       domainpos.t >= rs.out.start &&                               //
       domainpos.t < rs.out.start + rs.out.num * rs.out.interval && //
       (domainpos.t - rs.out.start) % rs.out.interval == 0) {

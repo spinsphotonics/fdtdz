@@ -236,11 +236,11 @@ __dhce__ bool IsDiamondCompletelyInDomain(XY pos, XY domain) {
 }
 
 // TODO: Document and test.
-__dhce__ bool IsDiamondCompletelyInSubdomainXY(XY pos, RunShape::Vol v) {
-  return pos.x >= v.x0 + (diamond::N / 2) &&      //
-         pos.x < v.x1 - ((diamond::N / 2) - 1) && //
-         pos.y >= v.y0 + (diamond::N / 2) &&      //
-         pos.y < v.y1 - (diamond::N / 2);
+__dhce__ bool IsDiamondCompletelyInXY(XY pos, int x0, int x1, int y0, int y1) {
+  return pos.x >= x0 + (diamond::N / 2) &&      //
+         pos.x < x1 - ((diamond::N / 2) - 1) && //
+         pos.y >= y0 + (diamond::N / 2) &&      //
+         pos.y < y1 - (diamond::N / 2);
 }
 
 // range-based for loop

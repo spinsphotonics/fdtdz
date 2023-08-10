@@ -43,7 +43,7 @@ template <typename T> void PrintField(T *ptr, int k, Xyz xyz, RunShape::Vol v) {
   int xx = v.x1 - v.x0;
   int yy = v.y1 - v.y0;
   int zz = v.z1 - v.z0;
-  // k -= zrange.start;
+  k -= v.z0;
   // TODO: change.
   for (int j = yy - 1; j >= 0; --j) {
     for (int i = 0; i < xx; ++i)
@@ -52,15 +52,15 @@ template <typename T> void PrintField(T *ptr, int k, Xyz xyz, RunShape::Vol v) {
   }
 }
 
-template <typename T>
-void PrintField2(T *ptr, int i, Xyz xyz, reference::SimParams<T> sp) {
-  for (int j = sp.y - 1; j >= 0; --j) {
-    for (int k = 0; k < sp.z; ++k)
-      std::cout << ptr[FieldIndex(Node(i, j, k, E, xyz), sp.x, sp.y, sp.z)]
-                << " ";
-    std::cout << "\n";
-  }
-}
+// template <typename T>
+// void PrintField2(T *ptr, int i, Xyz xyz, reference::SimParams<T> sp) {
+//   for (int j = sp.y - 1; j >= 0; --j) {
+//     for (int k = 0; k < sp.z; ++k)
+//       std::cout << ptr[FieldIndex(Node(i, j, k, E, xyz), sp.x, sp.y, sp.z)]
+//                 << " ";
+//     std::cout << "\n";
+//   }
+// }
 
 template <typename T, typename T1, int Npml> struct PointSim {
   PointSim(T1 mat0, Node srcnode, int timestep, int nlo, int nhi,
@@ -126,11 +126,8 @@ template <typename T, typename T1, int Npml> struct PointSim {
       for (int y = rs.sub.y0; y < rs.sub.y1; ++y)
         for (int z = rs.sub.z0; z < rs.sub.z1; ++z)
           for (Xyz xyz : diamond::AllXyz) {
-            Node refnode(x + rs.sub.x0, //
-                         y + rs.sub.y0, //
-                         z + rs.sub.z0, //
-                         E, xyz);
-            Node outnode(x, y, z, E, xyz);
+            Node refnode(x, y, z, E, xyz);
+            Node outnode(x - rs.sub.x0, y - rs.sub.y0, z - rs.sub.z0, E, xyz);
             ASSERT_FLOAT_EQ(
                 reference::Get(refnode, timestep_, reference::FIELD, sp, cache),
                 out.Ptr()[FieldIndex(outnode, sxx, syy, szz)])
@@ -239,7 +236,7 @@ TEST(Verification, PointSourceSubvolumeWithPml) {
       /*mat0=*/1.0f, srcnode,
       /*timestep=*/4, nlo, nhi,
       /*srctype=*/RunShape::Src::ZSLICE,
-      RunShape::Vol(6, 12, 5, 13, 5, diamond::ExtZz<float>(/*Npml=*/0) - 5));
+      RunShape::Vol(6, 12, 5, 13, 5, diamond::ExtZz<float>(Npml) - 5));
   auto sp = sim.SimParams();
   sp.wf0[0] = 1.0f;
 
@@ -330,7 +327,7 @@ TEST(Verification, Half2SubvolumeWithPml) {
   PointSim<half2, float, Npml> sim(
       /*mat0=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi,
       /*srctype=*/RunShape::Src::ZSLICE,
-      RunShape::Vol(6, 12, 5, 13, 2, diamond::ExtZz<half2>(/*Npml=*/0) - 1));
+      RunShape::Vol(6, 12, 5, 13, 2, diamond::ExtZz<half2>(Npml) - 1));
   auto sp = sim.SimParams();
   sp.wf0[0] = 0.5f;
 

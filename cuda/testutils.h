@@ -318,11 +318,11 @@ std::ostream &operator<<(std::ostream &os, const Ehc ehc) {
 
 std::ostream &operator<<(std::ostream &os, const Xyz xyz) {
   if (xyz == X)
-    os << "X";
+    os << "x";
   else if (xyz == Y)
-    os << "Y";
+    os << "y";
   else // xyz == Z.
-    os << "Z";
+    os << "z";
   return os;
 }
 

@@ -34,9 +34,11 @@ void MatCopy(T1 *src, T1 *dst, RunShape rs, int refxx, int refyy, int refzz) {
     for (int j = rs.sub.y0; j < rs.sub.y1; ++j)
       for (int k = rs.sub.z0; k < rs.sub.z1; ++k)
         for (Xyz xyz : diamond::AllXyz) {
-          Node n(i, j, k, diamond::C, xyz);
-          dst[cbuf::ExternalIndex(n, rs.sub)] =
-              src[reference::FieldIndex(n, refxx, refyy, refzz)];
+          Node refnode(i, j, k, diamond::C, xyz);
+          Node subnode(i - rs.sub.x0, j - rs.sub.y0, k - rs.sub.z0, diamond::C,
+                       xyz);
+          dst[cbuf::ExternalIndex(refnode, rs.sub)] =
+              src[reference::FieldIndex(refnode, refxx, refyy, refzz)];
         }
 }
 
