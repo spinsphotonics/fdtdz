@@ -47,16 +47,16 @@ int GlobalNodeHash(Node n, XY domain) {
 }
 
 void WriteToGlobalTest(XY domain, int npml, int zshift) {
-  RunShape::Out::Range xrange(0, domain.x), yrange(0, domain.y),
-      zrange(0, ExtZz<int>(npml));
-  testutils::Array<int> ext(ExternalElems(xrange, yrange, zrange));
+  RunShape::Vol //
+      sub(N, domain.x - N, N, domain.y - N, 0, ExtZz<int>(npml)),
+      vol(0, domain.x, 0, domain.y, 0, ExtZz<int>(npml));
+  testutils::Array<int> ext(ExternalElems(sub));
   for (int i = 0; i < domain.x; ++i)
     for (int j = 0; j < domain.y; ++j)
       for (int k = 0; k < ExtZz<int>(npml); ++k)
         for (Xyz xyz : diamond::AllXyz) {
           Node n(i, j, k, diamond::E, xyz);
-          ext[ExternalIndex(n, domain, npml, xrange, yrange, zrange)] =
-              GlobalNodeHash(n, domain);
+          ext[ExternalIndex(n, sub)] = GlobalNodeHash(n, domain);
         }
 
   testutils::Array<int> glb(GlobalElems(domain));
@@ -67,7 +67,7 @@ void WriteToGlobalTest(XY domain, int npml, int zshift) {
           for (Xyz xyz : diamond::AllXyz)
             WriteGlobal(ext.Ptr(), glb.Ptr(), Node(i, j, k, diamond::E, xyz),
                         domain, threadpos, npml, zshift, IsAux(threadpos, npml),
-                        xrange, yrange, zrange);
+                        sub, vol);
 
   for (int threadpos = 0; threadpos < kWarpSize; ++threadpos)
     for (int i = 0; i < domain.x; ++i)
@@ -95,16 +95,16 @@ float Half2GlobalNodeHash(Node n, XY domain) {
 }
 
 void Half2WriteToGlobalTest(XY domain, int npml, int zshift) {
-  RunShape::Out::Range xrange(0, domain.x), yrange(0, domain.y),
-      zrange(0, ExtZz<half2>(npml));
-  testutils::Array<float> ext(ExternalElems(xrange, yrange, zrange));
+  RunShape::Vol //
+      sub(N, domain.x - N, N, domain.y - N, 0, ExtZz<half2>(npml)),
+      vol(0, domain.x, 0, domain.y, 0, ExtZz<half2>(npml));
+  testutils::Array<float> ext(ExternalElems(sub));
   for (int i = 0; i < domain.x; ++i)
     for (int j = 0; j < domain.y; ++j)
       for (int k = 0; k < ExtZz<half2>(npml); ++k)
         for (Xyz xyz : diamond::AllXyz) {
           Node n(i, j, k, diamond::E, xyz);
-          ext[ExternalIndex(n, domain, npml, xrange, yrange,
-                            zrange)] = // n.k + 10;
+          ext[ExternalIndex(n, sub)] = // n.k + 10;
               Half2GlobalNodeHash(n, domain);
           // std::cout << "(" << n << ", " << GlobalNodeHash(n, domain) <<
           // ")\n";
@@ -118,7 +118,7 @@ void Half2WriteToGlobalTest(XY domain, int npml, int zshift) {
           for (Xyz xyz : diamond::AllXyz)
             WriteGlobal(ext.Ptr(), glb.Ptr(), Node(i, j, k, diamond::E, xyz),
                         domain, threadpos, npml, zshift, IsAux(threadpos, npml),
-                        xrange, yrange, zrange);
+                        sub, vol);
 
   for (int threadpos = 0; threadpos < kWarpSize; ++threadpos)
     for (int i = 0; i < domain.x; ++i)

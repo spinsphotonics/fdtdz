@@ -116,9 +116,7 @@ __dh__ void WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos,
 // Fill the internal global c-buffer with values from the external buffer.
 __dh__ void WriteGlobal(float *src, half2 *dst, Node n, XY domain,
                         int threadpos, int npml, int zshift, bool isaux,
-                        RunShape::Out::Range xrange,
-                        RunShape::Out::Range yrange,
-                        RunShape::Out::Range zrange) {
+                        RunShape::Vol sub, RunShape::Vol vol) {
   Node enodelo = n.K(ExtZIndex<half2>(n.k, threadpos, npml, zshift));
   Node enodehi = n.K(ExtZIndex<half2>(n.k + Nz, threadpos, npml, zshift));
   Node globalnode = n.dK(Nz * threadpos);

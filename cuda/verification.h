@@ -23,22 +23,20 @@ using defs::XY;
 using defs::Zero;
 using diamond::E;
 using diamond::H;
+using diamond::N;
 using diamond::Node;
 using diamond::Nz;
 using diamond::Xyz;
 
 template <typename T, typename T1>
 void MatCopy(T1 *src, T1 *dst, RunShape rs, int refxx, int refyy, int refzz) {
-  for (int i = rs.out.x.start + diamond::N; i < rs.out.x.stop - diamond::N; ++i)
-    for (int j = rs.out.y.start + diamond::N; j < rs.out.y.stop - diamond::N;
-         ++j)
-      for (int k = rs.out.z.start; k < rs.out.z.stop; ++k)
+  for (int i = rs.sub.x0; i < rs.sub.x1; ++i)
+    for (int j = rs.sub.y0; j < rs.sub.y1; ++j)
+      for (int k = rs.sub.z0; k < rs.sub.z1; ++k)
         for (Xyz xyz : diamond::AllXyz) {
-          dst[cbuf::ExternalIndex(
-              Node(i - diamond::N, j - diamond::N, k, diamond::C, xyz),
-              rs.domain, rs.pml.n, rs.out.x, rs.out.y, rs.out.z)] =
-              src[reference::FieldIndex(Node(i, j, k, diamond::C, xyz), refxx,
-                                        refyy, refzz)];
+          Node n(i, j, k, diamond::C, xyz);
+          dst[cbuf::ExternalIndex(n, rs.sub)] =
+              src[reference::FieldIndex(n, refxx, refyy, refzz)];
         }
 }
 
@@ -125,10 +123,18 @@ void RunKernel(RunShape rs, T1 *outptr, reference::SimParams<T1> sp, int nlo,
   cudaDeviceSynchronize(); // TODO: Better error checking.
 
   // Copy output.
-  for (int i = 0; i < field::ExternalElems<T>(rs.out.x, rs.out.y, rs.out.z,
-                                              /*nout=*/1, rs.pml.n);
-       ++i)
-    outptr[i] = args.output[i];
+  int sxx = rs.sub.x1 - rs.sub.x0;
+  int syy = rs.sub.y1 - rs.sub.y0;
+  int szz = rs.sub.z1 - rs.sub.z0;
+  for (int i = 0; i < sxx; ++i)
+    for (int j = 0; j < syy; ++j)
+      for (int k = 0; k < szz; ++k)
+        for (Xyz xyz : diamond::AllXyz) {
+          Node n(i, j, k, E, xyz);
+          outptr[reference::FieldIndex(n, sxx, syy, szz)] =
+              args.output[field::ExtNodeIndex(n.dI(N).dJ(N), /*outindex=*/0,
+                                              rs.sub)];
+        }
 }
 
 } // namespace verification
