@@ -313,13 +313,18 @@ def fdtdz(
 
     pml_widths = (pml_widths[0] - 1, pml_widths[1] + 1)
 
-    if epsilon.shape[3] < zz:
-      # Unfortunately, because we selectively roll the Ez values only after the
-      # simulation, we need an extra layer of values along z.
+    if epsilon.shape[3] == zz:
+      offset = (offset[1], offset[0], offset[2])
+    else:
       if offset[2] == 0:
         raise ValueError(f"``offset[2] == 0`` is not supported for "
                          f"``epsilon.shape[3] < zz`` and "
                          f"``source_field.shape == (2, 1, yy, zz)``.")
+      offset = (offset[1], offset[0], zz - (offset[2] + epsilon.shape[3]) - 1)
+
+    if epsilon.shape[3] < zz:
+      # Unfortunately, because we selectively roll the Ez values only after the
+      # simulation, we need an extra layer of values along z.
       epsilon = jnp.pad(epsilon, ((0, 0), (0, 0), (0, 0), (1, 0)), mode="edge")
 
     try:
@@ -337,7 +342,7 @@ def fdtdz(
           output_steps,
           use_reduced_precision,
           launch_params,
-          subvolume,
+          offset,
       )
     except ValueError as e:
       # Make a note that this occurred while doing the transform
@@ -436,6 +441,7 @@ def fdtdz(
       "blockspacing": spacing,
       "domainx": pxx,
       "domainy": pyy,
+      "domainz": zz,
       "npml": npml,
       "zshift": pml_widths[1],
       "srctype": 1 if _is_source_type(source_field, "z") else 0,
@@ -473,7 +479,7 @@ def fdtdz(
 
   zcoeff = jnp.stack(
       [
-          pml_a[:, 0],  #
+          pml_a[:, 0],
           pml_b[:, 0],
           pml_z[:, 0],
           pml_a[:, 1],
@@ -500,13 +506,14 @@ def fdtdz_impl(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
   return output_
 
 
-def _internal_shapes(xx, yy, zz, **kwargs):
+def _internal_shapes(**kwargs):
   """Shapes of temporary (and output) arrays needed during the simulation.
 
   NOTE: Spatial dimensions correspond to the internal dimensions needed by the
   kernel, _not_ to those provided in the more user-friendly ``fdtdz()``.
 
   """
+  xx, yy, zz = kwargs["domainx"], kwargs["domainy"], kwargs["domainz"]
   return {
       "buffer": (6, xx, yy, 64),  # Larger than needed.
       "cbuffer": (3, xx, yy, 64),  # Larger than needed.
@@ -522,8 +529,8 @@ def _internal_shapes(xx, yy, zz, **kwargs):
 
 def _fdtdz_abstract(cbuffer, abslayer, srclayer, waveform, zcoeff, **kwargs):
   # Assume ``cbuffer`` to be of shape ``(3, xx, yy, zz)``.
-  (_, xx, yy, zz) = cbuffer.shape
-  shapes = _internal_shapes(xx, yy, zz, **kwargs)
+  # (_, xx, yy, zz) = cbuffer.shape
+  shapes = _internal_shapes(**kwargs)
   return (
       ShapedArray(shapes["buffer"], dtype=jnp.float32),  # buffer.
       ShapedArray(shapes["cbuffer"], dtype=jnp.float32),  # cbuffer.
@@ -570,9 +577,11 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
       kwargs["outnum"],
       kwargs["dirname"],
   )
+  print(
+      f"{kwargs['subvolume_offset']} {kwargs['subvolume_size']} {kwargs['volume_size']}")
 
   (_, xx, yy, zz) = mlir.ir.RankedTensorType(cbuffer.type).shape
-  shapes = _internal_shapes(xx, yy, zz, **kwargs)
+  shapes = _internal_shapes(**kwargs)
 
   out = custom_call(
       "kernel_f16" if kwargs["use_reduced_precision"] else "kernel_f32",

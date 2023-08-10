@@ -1,7 +1,6 @@
 #include <pybind11/pybind11.h>
 #include <string>
 
-#include "diamond.h"
 #include "kernel_jax.h"
 #include "pybind11_kernel_helpers.h"
 #include "shapedefs.h"
@@ -11,7 +10,9 @@ namespace {
 using defs::RunShape;
 using defs::UV;
 using defs::XY;
-using diamond::N;
+
+// Copied from "diamond.h" which cannot be included here.
+constexpr const int N = 4;
 
 pybind11::dict Registrations() {
   pybind11::dict dict;
