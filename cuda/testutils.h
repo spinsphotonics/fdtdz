@@ -355,7 +355,7 @@ public:
 
     // Some standard values.
     Fill(Zero<T>(), simparams_.abs, FieldElems(x, y));
-    Fill(One<T>(), simparams_.mat, FieldElems(x, y, z));
+    Fill(dt, simparams_.mat, FieldElems(x, y, z));
     Fill(ZCoeff<T>{One<T>(), Zero<T>(), Zero<T>(), //
                    One<T>(), Zero<T>(), Zero<T>()},
          simparams_.zcoeff, z);
