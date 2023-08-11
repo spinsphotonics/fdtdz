@@ -100,7 +100,7 @@ TEST(Reference, BasicStencilWithModifications) {
 
   // Modify `mat` and `abs`.
   sp.mat[FieldIndex(n.AsEx(), sp.x, sp.y, sp.z)] = 0;
-  sp.abs[FieldIndex(n, sp.x, sp.y)] = 2;
+  sp.abs[FieldIndex(n, sp.x, sp.y)] = -4;
   sp.zcoeff[n.k].edz = 2;
 
   Cache<int> cache;
@@ -120,7 +120,7 @@ TEST(Reference, BasicStencilWithModifications) {
   EXPECT_EQ(Get(n.AsEy().dJ(-1), 1, FIELD, sp, cache), -2);
   EXPECT_EQ(Get(n.AsEy().dJ(-1).dK(+1), 1, FIELD, sp, cache), 1);
 
-  EXPECT_EQ(Get(n, 1, FIELD, sp, cache), -4);
+  EXPECT_EQ(Get(n, 1, FIELD, sp, cache), 1);
   EXPECT_EQ(Get(n.dI(+1), 1, FIELD, sp, cache), 1);
   EXPECT_EQ(Get(n.dI(-1), 1, FIELD, sp, cache), 1);
   EXPECT_EQ(Get(n.dJ(+1), 1, FIELD, sp, cache), 1);

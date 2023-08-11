@@ -6,6 +6,7 @@
 #include "buffer_ops.h"
 #include "defs.h"
 #include "diamond.h"
+#include "slice.h"
 
 namespace cbuf {
 
@@ -105,24 +106,32 @@ __dh__ T GlobalValue(T *ptr, Node externalnode, bool isaux, RunShape::Vol sub,
 template <typename T>
 __dh__ void WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos,
                         int npml, int zshift, bool isaux, RunShape::Vol sub,
-                        RunShape::Vol vol) {
+                        RunShape::Vol vol, T *abs, T dt) {
   Node externalnode = n.K(ExtZIndex<T>(n.k, threadpos, npml, zshift));
   Node globalnode = n.dK(Nz * threadpos);
+  // Apply the absorption mask.
+  T absvalue = abs[slice::ZMask<T>::ExternalIndex(XY(n.i, n.j), n.xyz, domain)];
+  T denom = (1 / dt) + (absvalue / 2);
   dst[GlobalIndex(globalnode, domain)] =
-      GlobalValue(src, externalnode, isaux, sub, vol);
+      GlobalValue(src, externalnode, isaux, sub, vol) / denom;
 }
 
 #ifndef __OMIT_HALF2__
 // Fill the internal global c-buffer with values from the external buffer.
 __dh__ void WriteGlobal(float *src, half2 *dst, Node n, XY domain,
                         int threadpos, int npml, int zshift, bool isaux,
-                        RunShape::Vol sub, RunShape::Vol vol) {
+                        RunShape::Vol sub, RunShape::Vol vol, float *abs,
+                        float dt) {
   Node enodelo = n.K(ExtZIndex<half2>(n.k, threadpos, npml, zshift));
   Node enodehi = n.K(ExtZIndex<half2>(n.k + Nz, threadpos, npml, zshift));
   Node globalnode = n.dK(Nz * threadpos);
+  // Apply the absorption mask.
+  float absvalue =
+      abs[slice::ZMask<float>::ExternalIndex(XY(n.i, n.j), n.xyz, domain)];
+  float denom = (1 / dt) + (absvalue / 2);
   dst[GlobalIndex(globalnode, domain)] =
-      __floats2half2_rn(GlobalValue(src, enodelo, isaux, sub, vol),
-                        GlobalValue(src, enodehi, isaux, sub, vol));
+      __floats2half2_rn(GlobalValue(src, enodelo, isaux, sub, vol) / denom,
+                        GlobalValue(src, enodehi, isaux, sub, vol) / denom);
 }
 #endif
 
@@ -273,7 +282,7 @@ __dhce__ void StoreShared(Cell<T> &cell, T *ptr, int threadpos, UV warppos,
 
 template <typename T, typename T1>
 __dh__ void Convert(T1 *src, T *dst, RunShape rs, int zshift, int threadpos,
-                    UV warppos, UV blockpos) {
+                    UV warppos, UV blockpos, T1 *abs, T1 dt) {
   // NOTE: We abuse the `UV` notation to iterate in (x, y) coordinates.
   UV init = warppos + rs.block * blockpos;
   UV stride = rs.block * rs.grid;
@@ -283,7 +292,8 @@ __dh__ void Convert(T1 *src, T *dst, RunShape rs, int zshift, int threadpos,
         for (diamond::Xyz xyz : diamond::AllXyz)
           cbuf::WriteGlobal(src, dst, diamond::Node(i, j, k, diamond::E, xyz),
                             rs.domain, threadpos, rs.pml.n, zshift,
-                            defs::IsAux(threadpos, rs.pml.n), rs.sub, rs.vol);
+                            defs::IsAux(threadpos, rs.pml.n), rs.sub, rs.vol,
+                            abs, dt);
 }
 
 } // namespace cbuf

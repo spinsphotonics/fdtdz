@@ -98,11 +98,6 @@ void TestZMask(XY domain) {
               XY p = pos + XY(i, j);
               bool isinside =
                   p.x >= 0 && p.y >= 0 && p.x < domain.x && p.y < domain.y;
-              // std::cout
-              //     << globalarr[ZMask<int>::GlobalIndex(cnt, XY(x, y),
-              //     domain)]
-              //     << " at (pos, node) = (" << XY(x, y) << ", "
-              //     << Node(i, j, 0, E, xyz) << ")\n";
               EXPECT_EQ(globalarr[ZMask<int>::GlobalIndex(cnt, pos, domain)],
                         isinside ? ZMask<int>::ConvertToCoeff(
                                        ZMaskNodeHash(p, xyz), dt)

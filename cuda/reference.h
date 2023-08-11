@@ -140,13 +140,12 @@ template <typename T> T Src(int s, SimParams<T> sp) {
 }
 
 template <typename T> T AbsCoeff(T abs, T dt) {
-  // return abs;
   return ((1 / dt) - (abs / 2)) / ((1 / dt) + (abs / 2));
 }
 
 template <typename T> T MatCoeff(T mat, T abs, T dt) {
-  return mat;
-  // return mat / ((1 / dt) + (abs / 2));
+  // return mat;
+  return mat / ((1 / dt) + (abs / 2));
 }
 
 // Computes the value of the node `n0` at step `s`.

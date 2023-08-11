@@ -91,7 +91,7 @@ template <typename T, typename T1, int Npml> struct PointSim {
         sp(alloc.Params()), srcnode_(srcnode), timestep_(timestep), nlo_(nlo),
         nhi_(nhi) {
     // Fill with halo.
-    FillWithXyHalo(dt, Zero<T1>(), diamond::N, sp.mat, sp);
+    FillWithXyHalo(One<T1>(), Zero<T1>(), diamond::N, sp.mat, sp);
   }
 
   reference::SimParams<T1> SimParams() { return sp; }
@@ -305,9 +305,9 @@ TEST(Verification, Half2WithPml) {
   constexpr const int nhi = 12;
   Node srcnode(7, 7, 10, E, Y); // Completely in bottom pml.
   PointSim<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
-      /*dt=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi);
+      /*dt=*/1.0f, srcnode, /*timestep=*/2, nlo, nhi);
   auto sp = sim.SimParams();
-  sp.wf0[0] = 0.5f;
+  sp.wf0[0] = 1.0f;
 
   // Modify pml coefficients.
   const reference::ZCoeff<float> zc = {2.0f, 1.0f, 0.5f, 1.0f, 2.0f, 0.25f};
@@ -325,11 +325,11 @@ TEST(Verification, Half2SubvolumeWithPml) {
   constexpr const int Npml = (nlo + nhi) / diamond::EffNz<half2>();
   Node srcnode(7, 7, 10, E, Y); // Completely in bottom pml.
   PointSim<half2, float, Npml> sim(
-      /*dt=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi,
+      /*dt=*/1.0f, srcnode, /*timestep=*/2, nlo, nhi,
       /*srctype=*/RunShape::Src::ZSLICE,
       RunShape::Vol(6, 12, 5, 13, 2, diamond::ExtZz<half2>(Npml) - 1));
   auto sp = sim.SimParams();
-  sp.wf0[0] = 0.5f;
+  sp.wf0[0] = 1.0f;
 
   // Modify pml coefficients.
   const reference::ZCoeff<float> zc = {2.0f, 1.0f, 0.5f, 1.0f, 2.0f, 0.25f};
@@ -398,10 +398,10 @@ TEST(Verification, YSrcWithPml) {
   constexpr const int nhi = 2;
   Node srcnode(10, 6, 10, E, X); // Completely in bottom pml.
   PointSim<float, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<float>()> sim(
-      /*dt=*/0.5f, srcnode, /*timestep=*/4, nlo, nhi,
+      /*dt=*/1.0f, srcnode, /*timestep=*/4, nlo, nhi,
       /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
-  sp.wf0[0] = 0.5f;
+  sp.wf0[0] = 1.0f;
 
   // Modify pml coefficients.
   const reference::ZCoeff<float> zc = {2.0f, 1.0f, 0.5f, 1.0f, 0.25f, 0.5f};
@@ -418,10 +418,10 @@ TEST(Verification, YSrcHalf2WithPml) {
   constexpr const int nhi = 12;
   Node srcnode(10, 6, 10, E, X); // Completely in bottom pml.
   PointSim<half2, float, /*Npml=*/(nlo + nhi) / diamond::EffNz<half2>()> sim(
-      /*dt=*/0.5f, srcnode, /*timestep=*/2, nlo, nhi,
+      /*dt=*/1.0f, srcnode, /*timestep=*/2, nlo, nhi,
       /*srctype=*/RunShape::Src::YSLICE);
   auto sp = sim.SimParams();
-  sp.wf0[0] = 0.5f;
+  sp.wf0[0] = 1.0f;
 
   // Modify pml coefficients.
   const reference::ZCoeff<float> zc = {2.0f, 1.0f, 0.5f, 1.0f, 1.5f, 0.5f};

@@ -91,7 +91,7 @@ __dhce__ void ConvertInputs(KernelArgs<T, T1> args, RunShape rs, int t, UV w,
   field::Init<T, T1>(args.output, rs, t, w, b);
   buffer::Init(args.internal.buffer, rs, t, w, b);
   cbuf::Convert(args.inputs.cbuffer, args.internal.cbuffer, rs, rs.pml.zshift,
-                t, w, b);
+                t, w, b, args.inputs.abslayer, args.inputs.dt);
   slice::ConvertMask(args.inputs.abslayer, args.internal.mask, rs, t, w, b,
                      args.inputs.dt);
   if (rs.src.type == RunShape::Src::ZSLICE) {
