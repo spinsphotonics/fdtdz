@@ -51,13 +51,14 @@ def _pml_sigma_values(pml_widths, zz, ln_R=16.0, m=4.0):
   return ((m + 1) * ln_R * z**m).T
 
 
-def _simulate(xx, yy, tt, dt, src_type, src_wavelength, src_ramp, abs_width,
+def _simulate(epsilon, dt, tt, src_type, src_wavelength, src_ramp, abs_width,
               abs_smoothness, pml_widths, output_steps, use_reduced_precision,
               subvolume_offset=(0, 0, 0), subvolume_size=None):
   """Run a simple continuous-wave dipole-source simulation."""
+  xx, yy = epsilon.shape[1:3]
   zz = (128 if use_reduced_precision else 64) - sum(pml_widths)
   # TODO: Put some structure in ``epsilon``.
-  epsilon = np.ones((3, xx, yy, zz), np.float32)
+  # epsilon = np.ones((3, xx, yy, zz), np.float32)
 
   abs_mask = _absorption_mask(xx, yy, abs_width, abs_smoothness)
   pml_kappa = np.ones((zz, 2), np.float32)
@@ -146,11 +147,13 @@ def test_point_source(xx, yy, tt, dt, src_type, src_wavelength,
   quarter_period = int(round(src_wavelength / 4 / dt))
 
   def mysim(use_subvolume=False):
+    pml_widths = (20, 20)
+    zz = (128 if use_reduced_precision else 64) - sum(pml_widths)
+    epsilon = np.ones((3, xx, yy, zz), np.float32)
     return _simulate(
-        xx=xx,
-        yy=yy,
-        tt=tt,
+        epsilon=epsilon,
         dt=dt,
+        tt=tt,
         src_type=src_type,
         src_wavelength=src_wavelength,
         src_ramp=12,
@@ -159,19 +162,17 @@ def test_point_source(xx, yy, tt, dt, src_type, src_wavelength,
         pml_widths=(20, 20),
         output_steps=(tt - quarter_period - 1, tt, quarter_period),
         use_reduced_precision=use_reduced_precision,
-        subvolume_offset=(180, 170, 30) if use_subvolume else (0, 0, 0),
-        subvolume_size=(5, 10, 2) if use_subvolume else None,
+        subvolume_offset=(120, 130, 30) if use_subvolume else (0, 0, 0),
+        subvolume_size=(5, 10, 3) if use_subvolume else None,
     )
 
   full_fields, err = mysim()
   assert not np.any(np.isnan(full_fields))
-  # assert np.max(np.abs(err)) < max_err
+  assert np.max(np.abs(err)) < max_err
 
   sub_fields, err = mysim(use_subvolume=True)
-  # print(sub_fields.shape)
-  # print(full_fields.shape)
   np.testing.assert_array_equal(
-      full_fields[..., 180:185, 170:180, 30:32], sub_fields)
+      full_fields[..., 120:125, 130:140, 30:33], sub_fields)
 
 
 def test_raises_correct_exception():
@@ -293,23 +294,6 @@ def test_raises_correct_exception():
         source_waveform=np.zeros((tt-1, 2), np.float32),
         source_position=zz//2,
         absorption_mask=np.ones((3, xx, yy), np.float32),
-        pml_kappa=np.ones((zz, 2), np.float32),
-        pml_sigma=np.zeros((zz, 2), np.float32),
-        pml_alpha=np.zeros((zz, 2), np.float32),
-        pml_widths=pml_widths,
-        output_steps=(tt - 1, tt, 1),
-        launch_params=((2, 2), (2, 2), 2, (7, 5)),
-        use_reduced_precision=True)
-
-  # `absorption_mask` wrong shape.
-  with pytest.raises(ValueError, match="absorption_mask must be of shape"):
-    fdtdz_jax.fdtdz(
-        epsilon=np.ones((3, xx, yy, zz), np.float32),
-        dt=0.5,
-        source_field=np.zeros((2, 2, xx, yy, 1), np.float32),
-        source_waveform=np.zeros((tt, 2), np.float32),
-        source_position=zz//2,
-        absorption_mask=np.ones((3, xx-1, yy), np.float32),
         pml_kappa=np.ones((zz, 2), np.float32),
         pml_sigma=np.zeros((zz, 2), np.float32),
         pml_alpha=np.zeros((zz, 2), np.float32),

@@ -371,11 +371,6 @@ def fdtdz(
         f"source_waveform must be of shape (tt, 2) = ({tt}, 2), but got "
         f"{source_waveform.shape} instead.")
 
-  if not (absorption_mask.ndim == 3 and absorption_mask.shape == (3, xx, yy)):
-    raise ValueError(
-        f"absorption_mask must be of shape (3, xx, yy) = (3, {xx}, {yy}), but "
-        f"got {absorption_mask.shape} instead.")
-
   if not (pml_kappa.ndim == 2 and pml_kappa.shape == (zz, 2)
           and pml_kappa.shape == pml_sigma.shape
           and pml_kappa.shape == pml_alpha.shape):
@@ -465,7 +460,7 @@ def fdtdz(
       "volume_size": absorption_mask.shape[1:3] + (zz,),
   }
 
-  abslayer = jnp.pad(abslayer,
+  abslayer = jnp.pad(absorption_mask,
                      ((0, 0),
                       (_NUM_PAD_CELLS, pxx - xx - _NUM_PAD_CELLS),
                       (_NUM_PAD_CELLS, pyy - yy - _NUM_PAD_CELLS)))
