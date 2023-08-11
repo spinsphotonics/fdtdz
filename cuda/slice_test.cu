@@ -58,11 +58,16 @@ void TestLayer(XY domain) {
 
 TEST(Slice, Layer) { TestLayer(/*domain=*/XY(4, 4)); }
 
+// Only returns `+2`, `0`, `-4`, or `-6` because of how
+// `ZMask::ConvertToCoeff()` works.
 int ZMaskNodeHash(XY pos, Xyz xyz) {
-  return diamond::Index(xyz) + 100 * (pos.y + 100 * pos.x);
+  int hash = diamond::Index(xyz) + 100 * (pos.y + 100 * pos.x);
+  hash = 2 * ((hash * 37) % 4);
+  return hash < 4 ? hash : -hash;
 }
 
 void TestZMask(XY domain) {
+  int dt = 1;
   testutils::Array<int> externalarr(ZMask<int>::ExternalElems(domain));
   for (int i = 0; i < domain.x; ++i)
     for (int j = 0; j < domain.y; ++j)
@@ -76,7 +81,7 @@ void TestZMask(XY domain) {
   for (int i = 0; i < domain.x; ++i)
     for (int j = 0; j < domain.y; j += 2)
       ZMask<int>::WriteGlobal(externalarr.Ptr(), globalarr.Ptr(), XY(i, j),
-                              domain);
+                              domain, dt);
 
   for (int x = 0; x < domain.x; ++x)
     for (int y = 0; y < domain.y; y += 2) {
@@ -93,13 +98,10 @@ void TestZMask(XY domain) {
               XY p = pos + XY(i, j);
               bool isinside =
                   p.x >= 0 && p.y >= 0 && p.x < domain.x && p.y < domain.y;
-              // std::cout
-              //     << globalarr[ZMask<int>::GlobalIndex(cnt, XY(x, y),
-              //     domain)]
-              //     << " at (pos, node) = (" << XY(x, y) << ", "
-              //     << Node(i, j, 0, E, xyz) << ")\n";
               EXPECT_EQ(globalarr[ZMask<int>::GlobalIndex(cnt, pos, domain)],
-                        isinside ? ZMaskNodeHash(p, xyz) : 0)
+                        isinside ? ZMask<int>::ConvertToCoeff(
+                                       ZMaskNodeHash(p, xyz), dt)
+                                 : 0)
                   << "(pos, node) = (" << pos << ", " << n << ")\n";
               ++cnt;
             }

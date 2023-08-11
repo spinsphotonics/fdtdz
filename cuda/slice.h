@@ -64,8 +64,14 @@ template <typename T> struct ZMask : public Layer<T> {
     return pos.x + domain.x * (pos.y + domain.y * diamond::Index(xyz));
   }
 
+  template <typename T1> __dhsc__ T ConvertToCoeff(T1 abs, T1 dt) {
+    // return defs::Convert<T, T1>(abs);
+    return defs::Convert<T, T1>(((1 / dt) - (abs / 2)) /
+                                ((1 / dt) + (abs / 2)));
+  }
+
   template <typename T1>
-  __dhsc__ void WriteGlobal(T1 *src, T *dst, XY pos, XY domain) {
+  __dhsc__ void WriteGlobal(T1 *src, T *dst, XY pos, XY domain, T1 dt) {
     int cnt = 0;
     for (int i : diamond::AllI)
 #pragma unroll
@@ -78,7 +84,7 @@ template <typename T> struct ZMask : public Layer<T> {
                 p.x >= 0 && p.y >= 0 && p.x < domain.x && p.y < domain.y;
             dst[Layer<T>::GlobalIndex(cnt, pos, domain)] =
                 isinside
-                    ? defs::Convert<T, T1>(src[ExternalIndex(p, xyz, domain)])
+                    ? ConvertToCoeff(src[ExternalIndex(p, xyz, domain)], dt)
                     : defs::Zero<T>();
             ++cnt;
           }
@@ -240,14 +246,14 @@ template <typename T> struct YSrc {
 // Convert between external and global buffer for the absorption mask.
 template <typename T, typename T1>
 __dh__ void ConvertMask(T1 *src, T *dst, RunShape rs, int threadpos, UV warppos,
-                        UV blockpos) {
+                        UV blockpos, T1 dt) {
   UV init = warppos + rs.block * blockpos;
   UV stride = rs.block * rs.grid;
   for (int i = init.u; i < rs.domain.x; i += stride.u)
     for (int j = 2 * init.v; j < rs.domain.y;
          j += 2 * stride.v) // Only need even y positions.
       if (threadpos == 0)
-        slice::ZMask<T>::WriteGlobal(src, dst, XY(i, j), rs.domain);
+        slice::ZMask<T>::WriteGlobal(src, dst, XY(i, j), rs.domain, dt);
 }
 
 // Convert between external and global buffer for the z-plane source.

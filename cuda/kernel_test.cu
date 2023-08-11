@@ -5,6 +5,7 @@
 
 #include "buffer.h"
 #include "defs.h"
+#include "diamond.h"
 #include "kernel.h"
 #include "kernel_precompiled.h"
 #include "scanner.h"
@@ -16,6 +17,7 @@ namespace {
 using defs::RunShape;
 using defs::UV;
 using defs::XY;
+using diamond::N;
 
 // Benchmark a kernel.
 template <typename T, typename T1>
@@ -49,8 +51,7 @@ void BenchmarkKernel(kernel_precompiled::PreCompiledKernelType type,
   std::cout << tcups << "/" << actual_tcups << " (raw/adj) TCUPS at " //
             << minseconds / numsteps * 1e6 << " us/step ("            //
             << minseconds * 1e3 << " ms, "                            //
-            << numsteps << " steps, "                                 //
-            << "\n";
+            << numsteps << " steps)\n";                               //
   // << testutils::NumRegisters(kernel) << " regs)\n";
 }
 
@@ -66,10 +67,20 @@ void SpacingBenchmark(int timesteps, int repeats, std::vector<int> spacings,
         /*domain=*/XY(200, 216),
         /*pml=*/RunShape::Pml(/*n=*/npml, /*zshift=*/2),
         /*src=*/RunShape::Src(RunShape::Src::YSLICE, /*srcpos=*/64),
-        /*out=*/RunShape::Out(/*start=*/timesteps, /*interval=*/1, /*num=*/1));
+        /*out=*/
+        RunShape::Out(
+            /*start=*/timesteps, /*interval=*/1, /*num=*/1),
+        /*sub=*/
+        RunShape::Vol(N, 200 - N, N, 216 - N, 0, diamond::ExtZz<half2>(npml)),
+        /*vol=*/
+        RunShape::Vol(N, 200 - N, N, 216 - N, 0, diamond::ExtZz<half2>(npml)));
+
+    // /*x=*/RunShape::Out::Range(0, 200),
+    // /*y=*/RunShape::Out::Range(0, 216),
+    // /*z=*/RunShape::Out::Range(0, diamond::ExtZz<half2>(npml))));
     ASSERT_TRUE(scanner::IsValidRunShape(rs)) << "Invalid run shape: " << rs;
 
-    KernelAlloc<half2, float> alloc(rs, /*hmat=*/defs::One<float>());
+    KernelAlloc<half2, float> alloc(rs, /*dt=*/defs::One<float>());
     std::cout << spacing << ": ";
     BenchmarkKernel<half2>(
         kernel_precompiled::MakePreCompiledKernelType<half2>(

@@ -1,0 +1,461 @@
+
+
+<!DOCTYPE html>
+
+
+<html lang="en" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.19: https://docutils.sourceforge.io/" />
+
+    <title>fdtdz documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="_static/styles/bootstrap.css?digest=e353d410970836974a52" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=e353d410970836974a52" rel="stylesheet" />
+
+  
+  <link href="_static/vendor/fontawesome/6.1.2/css/all.min.css?digest=e353d410970836974a52" rel="stylesheet" />
+  <link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-solid-900.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-brands-400.woff2" />
+<link rel="preload" as="font" type="font/woff2" crossorigin href="_static/vendor/fontawesome/6.1.2/webfonts/fa-regular-400.woff2" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css" />
+    <link rel="stylesheet" href="_static/styles/sphinx-book-theme.css?digest=14f4ca6b54d191a8c7657f6c759bf11a5fb86285" type="text/css" />
+  
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=e353d410970836974a52" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52" />
+
+    <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+    <script src="_static/doctools.js"></script>
+    <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/scripts/sphinx-book-theme.js?digest=5a5c038af52cf7bc1a1ec88eea08e6366ee68824"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="">
+
+  
+  
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__primary"
+          id="__primary"/>
+  <label class="overlay overlay-primary" for="__primary"></label>
+  
+  <input type="checkbox"
+          class="sidebar-toggle"
+          name="__secondary"
+          id="__secondary"/>
+  <label class="overlay overlay-secondary" for="__secondary"></label>
+  
+  <div class="search-button__wrapper">
+    <div class="search-button__overlay"></div>
+    <div class="search-button__search-container">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         id="search-input"
+         placeholder="Search..."
+         aria-label="Search..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+  </div>
+  
+    <nav class="bd-header navbar navbar-expand-lg bd-navbar">
+    </nav>
+  
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      <div class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+    
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+  
+
+<a class="navbar-brand logo" href="#">
+  
+  
+  
+  
+  
+    <p class="title logo__title">None</p>
+  
+</a></div>
+        <div class="sidebar-primary-item"><nav class="bd-links" id="bd-docs-nav" aria-label="Main">
+    <div class="bd-toc-item navbar-nav active">
+        
+    </div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main">
+        
+        
+
+<div class="sbt-scroll-pixel-helper"></div>
+
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item"><label class="sidebar-toggle primary-toggle btn btn-sm" for="__primary" title="Toggle primary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <span class="fa-solid fa-bars"></span>
+</label></div>
+      
+    </div>
+  
+  
+    <div class="header-article-items__end">
+      
+        <div class="header-article-item">
+
+<div class="article-header-buttons">
+
+
+<a href="https://github.com/spinsphotonics/fdtdz" target="_blank"
+   class="btn btn-sm btn-source-repository-button"
+   title="Source repository"
+   data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fab fa-github"></i>
+  </span>
+
+</a>
+
+
+
+
+<button onclick="toggleFullScreen()"
+  class="btn btn-sm btn-fullscreen-button"
+  title="Fullscreen mode"
+  data-bs-placement="bottom" data-bs-toggle="tooltip"
+>
+  
+
+<span class="btn__icon-container">
+  <i class="fas fa-expand"></i>
+  </span>
+
+</button>
+
+
+<script>
+document.write(`
+  <button class="theme-switch-button btn btn-sm btn-outline-primary navbar-btn rounded-circle" title="light/dark" aria-label="light/dark" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="theme-switch" data-mode="light"><i class="fa-solid fa-sun"></i></span>
+    <span class="theme-switch" data-mode="dark"><i class="fa-solid fa-moon"></i></span>
+    <span class="theme-switch" data-mode="auto"><i class="fa-solid fa-circle-half-stroke"></i></span>
+  </button>
+`);
+</script>
+
+<script>
+document.write(`
+  <button class="btn btn-sm navbar-btn search-button search-button__button" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass"></i>
+  </button>
+`);
+</script>
+<label class="sidebar-toggle secondary-toggle btn btn-sm" for="__secondary"title="Toggle secondary sidebar" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <span class="fa-solid fa-list"></span>
+</label>
+</div></div>
+      
+    </div>
+  
+</div>
+</div>
+              
+              
+
+<div id="jb-print-docs-body" class="onlyprint">
+    <h1>fdtd-z API documentation</h1>
+    <!-- Table of contents -->
+    <div id="print-main-content">
+        <div id="jb-print-toc">
+            
+        </div>
+    </div>
+</div>
+
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article" role="main">
+                  
+  <section id="fdtd-z-api-documentation">
+<h1><em>fdtd-z</em> API documentation<a class="headerlink" href="#fdtd-z-api-documentation" title="Permalink to this heading">#</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="fdtdz_jax.fdtdz">
+<span class="sig-prename descclassname"><span class="pre">fdtdz_jax.</span></span><span class="sig-name descname"><span class="pre">fdtdz</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">epsilon</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dt</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_field</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_waveform</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">source_position</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">absorption_mask</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pml_kappa</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pml_sigma</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pml_alpha</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pml_widths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">output_steps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">use_reduced_precision</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">launch_params</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#fdtdz_jax.fdtdz" title="Permalink to this definition">#</a></dt>
+<dd><p>Execute a FDTD simulation.</p>
+<p><code class="docutils literal notranslate"><span class="pre">fdtd-z</span></code> is an implementation of the finite-difference time-domain (FDTD)
+method that is efficiently mapped to the GPU via a systolic update scheme
+<a class="footnote-reference brackets" href="#whitepaper-ref" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>. This function exposes, as a JAX primitive, a relatively low-level API
+to the underlying CUDA kernel.</p>
+<p><code class="docutils literal notranslate"><span class="pre">fdtd-z</span></code> targets nanophotonic applications with a heavy prioritization on
+simulation throughput, as insufficient throughput is currently the
+bottleneck in many workflows (such as nanophotonic inverse design). As such,
+the flexibility and features of the engine have been kept to a bare
+minimum in the name of performance:</p>
+<ul class="simple">
+<li><p>Reduced-precision mode is available and recommended which utilizes
+16-bit floating point internally (input and output arrays are always
+at single-precision) and allows for ~2 times larger z-extent. Requires
+(Nvidia) GPUs of compute capability &gt;= 6.0.</p></li>
+<li><p>Z-extent (<code class="docutils literal notranslate"><span class="pre">zz</span></code>) of the simulation domain is fixed to a specific value to
+allow for a natural mapping to the 32 threads/warp architecture of
+Nvidia GPUs. The required value of <code class="docutils literal notranslate"><span class="pre">zz</span></code> is given by either <code class="docutils literal notranslate"><span class="pre">128</span> <span class="pre">-</span> <span class="pre">p</span></code> or
+<code class="docutils literal notranslate"><span class="pre">64</span> <span class="pre">-</span> <span class="pre">p</span></code> for the cases of reduced precision or full precision
+respectively, where <code class="docutils literal notranslate"><span class="pre">p</span></code> is the total number of PML layers for the
+simulation.</p></li>
+<li><p>PML boundary conditions <a class="footnote-reference brackets" href="#cpml-ref" id="id2" role="doc-noteref"><span class="fn-bracket">[</span>2<span class="fn-bracket">]</span></a> are limited to the z-direction, adiabatic
+aborbing boundaries <a class="footnote-reference brackets" href="#absorber-ref" id="id3" role="doc-noteref"><span class="fn-bracket">[</span>3<span class="fn-bracket">]</span></a> must be used in the x- and y-directions.</p></li>
+<li><p>Absorption (apart from absorbing boundary conditions) and dispersion are
+not implemented. The simulated structure must consist of a real-valued
+permittivity that depends only on the E-field component and spatial
+location.</p></li>
+<li><p>The permeability is fixed at a value of <code class="docutils literal notranslate"><span class="pre">1</span></code> everywhere in the simulation
+domain.</p></li>
+<li><p>Only current sources as hyperplanes along the y- and z-axes are
+implemented.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">fdtd-z</span></code> uses a “dimensionless” system <a class="footnote-reference brackets" href="#meep-ref" id="id4" role="doc-noteref"><span class="fn-bracket">[</span>4<span class="fn-bracket">]</span></a> where the permittivity and
+permeability of vacuum (and therefore the speed of light), as well as the size
+of the Yee cell are all set to a (dimensionless) value of <code class="docutils literal notranslate"><span class="pre">1</span></code> (although the
+size of the cell along the z-axis can be varied).</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="whitepaper-ref" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p>Lu, Jesse, and Jelena Vuckovic. “fdtd-z: A systolic scheme for GPU-accelerated nanophotonic simulation.” <a class="github reference external" href="https://github.com/spinsphotonics/fdtdz/blob/main/paper/paper.pdf">spinsphotonics/fdtdz</a></p>
+</aside>
+<aside class="footnote brackets" id="cpml-ref" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id2">2</a><span class="fn-bracket">]</span></span>
+<p>Roden, J. Alan, and Stephen D. Gedney. “Convolution PML
+(CPML): An efficient FDTD implementation of the CFS–PML for arbitrary
+media.” Microwave and optical technology letters 27.5 (2000): 334-339.</p>
+</aside>
+<aside class="footnote brackets" id="absorber-ref" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id3">3</a><span class="fn-bracket">]</span></span>
+<p>Oskooi, Ardavan, and Steven G. Johnson. “Distinguishing correct from incorrect PML proposals and a corrected unsplit PML for anisotropic, dispersive media.” Journal of Computational Physics 230.7 (2011): 2369-2377.</p>
+</aside>
+<aside class="footnote brackets" id="meep-ref" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id4">4</a><span class="fn-bracket">]</span></span>
+<p>Oskooi, Ardavan F., et al. “MEEP: A flexible free-software package for electromagnetic simulations by the FDTD method.” Computer Physics Communications 181.3 (2010): 687-702.</p>
+</aside>
+</aside>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>epsilon</strong> – <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">xx,</span> <span class="pre">yy,</span> <span class="pre">zz)</span></code>-shaped array of floats representing the
+permittivity values at the <code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Ey</span></code>, and <code class="docutils literal notranslate"><span class="pre">Ez</span></code> nodes of the Yee cell
+respectively. We use the convention that these components are located at
+<code class="docutils literal notranslate"><span class="pre">(0.5,</span> <span class="pre">0,</span> <span class="pre">0)</span></code>, <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0.5,</span> <span class="pre">0)</span></code>, and <code class="docutils literal notranslate"><span class="pre">(0,</span> <span class="pre">0,</span> <span class="pre">0.5)</span></code> respectively, for a Yee
+cell of side-length 1.</p></li>
+<li><p><strong>dt</strong> – Scalar float representing the amount of time elapsed in one update step.</p></li>
+<li><p><strong>source_field</strong> – An array of shape <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">1,</span> <span class="pre">yy,</span> <span class="pre">zz)</span></code>, <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">xx,</span> <span class="pre">1,</span> <span class="pre">zz)</span></code>, or
+<code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">2,</span> <span class="pre">xx,</span> <span class="pre">yy,</span> <span class="pre">1)</span></code>-shaped array for a source at
+<code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">source_position</span></code>, <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">source_position</span></code>, or <code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">source_position</span></code>
+respectively. The <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">1,</span> <span class="pre">yy,</span> <span class="pre">zz)</span></code> source features <code class="docutils literal notranslate"><span class="pre">Ey</span></code> and <code class="docutils literal notranslate"><span class="pre">Ez</span></code>
+components in that order, while the <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">xx,</span> <span class="pre">1,</span> <span class="pre">zz)</span></code> source features <code class="docutils literal notranslate"><span class="pre">Ex</span></code>
+and <code class="docutils literal notranslate"><span class="pre">Ez</span></code> components in that order. The <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">2,</span> <span class="pre">xx,</span> <span class="pre">yy,</span> <span class="pre">1)</span></code> allows for the
+specification of two separate source fields at <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">:,</span> <span class="pre">:,</span> <span class="pre">:,</span> <span class="pre">:]</span></code> and
+<code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">:,</span> <span class="pre">:,</span> <span class="pre">:,</span> <span class="pre">:]</span></code> which each contain <code class="docutils literal notranslate"><span class="pre">Ex</span></code> and <code class="docutils literal notranslate"><span class="pre">Ey</span></code> components in that
+order.</p></li>
+<li><p><strong>source_waveform</strong> – <code class="docutils literal notranslate"><span class="pre">(tt,</span> <span class="pre">2)</span></code>-shaped array of floats denoting the temporal
+variation to apply to the each of the source fields, where <code class="docutils literal notranslate"><span class="pre">tt</span></code> is the
+total number of update steps needed (note that the first update occurs at
+step <code class="docutils literal notranslate"><span class="pre">0</span></code>). Specifically, the subarray at <code class="docutils literal notranslate"><span class="pre">(tt,</span> <span class="pre">i)</span></code> applies a temporal
+variation to the <code class="docutils literal notranslate"><span class="pre">(i,</span> <span class="pre">2,</span> <span class="pre">xx,</span> <span class="pre">yy.</span> <span class="pre">1)</span></code> subarray of a source at
+<code class="docutils literal notranslate"><span class="pre">z</span> <span class="pre">=</span> <span class="pre">source_position</span></code>, while for a source at <code class="docutils literal notranslate"><span class="pre">x</span> <span class="pre">=</span> <span class="pre">source_position</span></code> or
+<code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">source_position</span></code> the temporal variation is applied to the source
+field at <code class="docutils literal notranslate"><span class="pre">source_position</span> <span class="pre">-</span> <span class="pre">i</span></code>.</p></li>
+<li><p><strong>source_position</strong> – integer representing the position of the source along
+either the y- or z-axes. For the case of a source at <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">source_position</span></code>
+the source field is applied (with the corresponding waveform) at both
+<code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">source_position</span></code> and <code class="docutils literal notranslate"><span class="pre">y</span> <span class="pre">=</span> <span class="pre">source_position</span> <span class="pre">-</span> <span class="pre">1</span></code>, with the additional
+performance constraint that <code class="docutils literal notranslate"><span class="pre">source_position</span></code> must be even.</p></li>
+<li><p><strong>absorption_mask</strong> – <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">xx,</span> <span class="pre">yy)</span></code>-shaped array of floats representing a
+z-invariant conductivity intended to allow for adiabatic absorbing
+boundary conditions along the x- and y-axes according to
+<code class="docutils literal notranslate"><span class="pre">conductivity(x,</span> <span class="pre">y,</span> <span class="pre">z)</span> <span class="pre">=</span> <span class="pre">aborption_mask(x,</span> <span class="pre">y)</span> <span class="pre">*</span> <span class="pre">epsilon(x,</span> <span class="pre">y,</span> <span class="pre">z)</span></code>
+for the <code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Ey</span></code>, and <code class="docutils literal notranslate"><span class="pre">Ez</span></code> component respectively.</p></li>
+<li><p><strong>pml_kappa</strong> – <code class="docutils literal notranslate"><span class="pre">(zz,</span> <span class="pre">2)</span></code>-shaped array of floats denoting the distance along the
+z-axis between adjacent Yee cells. This is primarily intended to be used
+as a stretching parameter for the PML, but equivalently also determines
+the unit cell length along the z-axis throughout the simulation domain.
+Specifically, <code class="docutils literal notranslate"><span class="pre">(zz,</span> <span class="pre">0)</span></code> represents the distance between successive layers
+of <code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Ey</span></code>, and <code class="docutils literal notranslate"><span class="pre">Hz</span></code> nodes, while <code class="docutils literal notranslate"><span class="pre">(zz,</span> <span class="pre">1)</span></code> represents the distance
+between layers of <code class="docutils literal notranslate"><span class="pre">Hx</span></code>, <code class="docutils literal notranslate"><span class="pre">Hy</span></code>, and <code class="docutils literal notranslate"><span class="pre">Ez</span></code> nodes.</p></li>
+<li><p><strong>pml_sigma</strong> – <code class="docutils literal notranslate"><span class="pre">(zz,</span> <span class="pre">2)</span></code>-shaped array of floats for the conductivity of the PML
+region, where <code class="docutils literal notranslate"><span class="pre">(zz,</span> <span class="pre">0)</span></code> and <code class="docutils literal notranslate"><span class="pre">(zz,</span> <span class="pre">1)</span></code> are the values at the
+(<code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Ey</span></code>, <code class="docutils literal notranslate"><span class="pre">Hz</span></code>) and (<code class="docutils literal notranslate"><span class="pre">Hx</span></code>, <code class="docutils literal notranslate"><span class="pre">Hy</span></code>, <code class="docutils literal notranslate"><span class="pre">Ez</span></code>) layers respectively. Must be set
+to <code class="docutils literal notranslate"><span class="pre">0</span></code> outside of the PML regions.</p></li>
+<li><p><strong>pml_alpha</strong> – <code class="docutils literal notranslate"><span class="pre">(zz,</span> <span class="pre">2)</span></code>-shaped array of floats similar to <code class="docutils literal notranslate"><span class="pre">pml_sigma</span></code>. Must
+also be set to <code class="docutils literal notranslate"><span class="pre">0</span></code> outside of the PML regions.</p></li>
+<li><p><strong>pml_widths</strong> – <code class="docutils literal notranslate"><span class="pre">(bot,</span> <span class="pre">top)</span></code> integers specifying the number of cells which
+are to be designated as PML layers at the bottom and top of the
+simulation respectively. For performance reasons, the total number of PML
+layers used in the simulation (<code class="docutils literal notranslate"><span class="pre">bot</span> <span class="pre">+</span> <span class="pre">top</span></code>) is required to be a multiple
+of <code class="docutils literal notranslate"><span class="pre">4</span></code>.</p></li>
+<li><p><strong>output_steps</strong> – <code class="docutils literal notranslate"><span class="pre">(start,</span> <span class="pre">stop,</span> <span class="pre">interval)</span></code> tuple of integers denoting the
+update step at which to start recording output fields, the number of
+update steps separating successive output fields, and the step at which
+to stop recording (not included).</p></li>
+<li><p><strong>use_reduced_precision</strong> – If <code class="docutils literal notranslate"><span class="pre">True</span></code>, uses 16-bit (IEEE 754) precision for the
+simulation which allows for a maximum of 128 cells along the z-axis.
+Otherwise, uses 32-bit single-precision with a maximum of 64 cells
+along the z-axis. Both inputs and results are always expected as 32-bit
+arrays.</p></li>
+<li><p><strong>launch_params</strong> – Integers as an object in the form of
+<code class="docutils literal notranslate"><span class="pre">((blocku,</span> <span class="pre">blockv),</span> <span class="pre">(gridu,</span> <span class="pre">gridv),</span> <span class="pre">spacing,</span> <span class="pre">(cc_major,</span> <span class="pre">cc_minor))</span></code>,
+specifying the structure of the systolic update to use on the GPU where
+<code class="docutils literal notranslate"><span class="pre">(blocku,</span> <span class="pre">blockv)</span></code> determines the layout of warps in the u- and
+v-directions within a block and should be <code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">4)</span></code> or <code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">2)</span></code>;
+<code class="docutils literal notranslate"><span class="pre">(gridu,</span> <span class="pre">gridv)</span></code> specify the layout of blocks on the GPU and must be
+equal to or less than the number of streaming multiprocessors on the
+GPU because of the need for grid-wide synchronization;
+<code class="docutils literal notranslate"><span class="pre">spacing</span></code> controls the number of buffers used between each block and
+its downstream neighbor and should be tuned to balance between
+reducing grid synchronization overhead and staying within the limits
+of the L2 cache; and
+<code class="docutils literal notranslate"><span class="pre">(cc_major,</span> <span class="pre">cc_minor)</span></code> major and minor compute capability of the
+device. Used to determine which precompiled kernel to use. Currently
+allowed values are <code class="docutils literal notranslate"><span class="pre">(3,</span> <span class="pre">7)</span></code>, <code class="docutils literal notranslate"><span class="pre">(6,</span> <span class="pre">0)</span></code>, <code class="docutils literal notranslate"><span class="pre">(7,</span> <span class="pre">0)</span></code>, <code class="docutils literal notranslate"><span class="pre">(7,</span> <span class="pre">5)</span></code>, and
+<code class="docutils literal notranslate"><span class="pre">(8,</span> <span class="pre">0)</span></code>. Recommended to use the latest compute capability kernel
+possible that does not exceed the compute capability of the device.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><code class="docutils literal notranslate"><span class="pre">(n,</span> <span class="pre">3,</span> <span class="pre">xx,</span> <span class="pre">yy,</span> <span class="pre">zz)</span></code> array of floats representing <code class="docutils literal notranslate"><span class="pre">n</span></code> output fields, where
+each output field consists of the values of the <code class="docutils literal notranslate"><span class="pre">Ex</span></code>, <code class="docutils literal notranslate"><span class="pre">Ey</span></code>, and <code class="docutils literal notranslate"><span class="pre">Ez</span></code> node
+(in that order) over the simulation domain, at a specific update step.</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+
+              
+              
+                <footer class="bd-footer-article">
+                  
+<div class="footer-article-items footer-article__inner">
+  
+    <div class="footer-article-item"><!-- Previous / next buttons -->
+<div class="prev-next-area">
+</div></div>
+  
+</div>
+
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+<div class="bd-footer-content__inner container">
+  
+  <div class="footer-item">
+    
+<p class="component-author">
+By SPINS Photonics
+</p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  <p class="copyright">
+    
+      © Copyright 2023, SPINS Photonics.
+      <br/>
+    
+  </p>
+
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+  <div class="footer-item">
+    
+  </div>
+  
+</div>
+          </footer>
+        
+
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script src="_static/scripts/bootstrap.js?digest=e353d410970836974a52"></script>
+<script src="_static/scripts/pydata-sphinx-theme.js?digest=e353d410970836974a52"></script>
+
+  <footer class="bd-footer">
+  </footer>
+  </body>
+</html>

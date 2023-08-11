@@ -82,18 +82,26 @@ struct RunShape {
     const int num;      // Number of outputs to write.
   };
 
+  struct Vol {
+    __dhce__ Vol(int x0, int x1, int y0, int y1, int z0, int z1)
+        : x0(x0), x1(x1), y0(y0), y1(y1), z0(z0), z1(z1) {}
+    const int x0, x1, y0, y1, z0, z1;
+  };
+
   __dhce__ RunShape(                                                 //
       UV blockshape, UV gridshape, int blockspacing, XY domainshape, //
-      Pml pml, Src src, Out out)
+      Pml pml, Src src, Out out, Vol sub, Vol vol)
       : block(blockshape), grid(gridshape), spacing(blockspacing),
-        domain(domainshape), pml(pml), src(src), out(out) {}
+        domain(domainshape), pml(pml), src(src), out(out), sub(sub), vol(vol) {}
 
   // Helpful for testing.
   __dhce__ RunShape( //
       UV blockshape, UV gridshape, int blockspacing, XY domainshape)
       : RunShape(blockshape, gridshape, blockspacing, domainshape,
                  Pml(/*n=*/0, /*zshift=*/0), Src(Src::ZSLICE, /*pos=*/0),
-                 Out(/*start=*/0, /*interval=*/0, /*num=*/0)) {}
+                 Out(/*start=*/0, /*interval=*/0, /*num=*/0),
+                 /*sub=*/Vol(0, 0, 0, 0, 0, 0),
+                 /*vol=*/Vol(0, 0, 0, 0, 0, 0)) {}
 
   const UV block, grid; // Size of the diamond at the block and grid levels.
   const int spacing;    // Delay between adjacent blocks in the grid.
@@ -101,6 +109,7 @@ struct RunShape {
   const Pml pml;        // Parameters related to the PML.
   const Src src;        // Parameters related to current sources.
   const Out out;        // Parameters related to output fields.
+  const Vol sub, vol;   // Value ranges for subvolume and volume.
 };
 
 }; // namespace defs

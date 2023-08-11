@@ -39,15 +39,15 @@ using defs::UV;
 using defs::XY;
 
 struct KernelDescriptor {
-  KernelDescriptor(std::string dirname, int capability, float hmat, RunShape rs,
+  KernelDescriptor(std::string dirname, int capability, float dt, RunShape rs,
                    bool withglobal, bool withshared, bool withupdate)
-      : dirname(dirname), capability(capability), hmat(hmat), rs(rs),
+      : dirname(dirname), capability(capability), dt(dt), rs(rs),
         withglobal(withglobal), withshared(withshared), withupdate(withupdate) {
   }
 
   std::string dirname;
   int capability;
-  float hmat;
+  float dt;
   RunShape rs;
   bool withglobal, withshared, withupdate;
 

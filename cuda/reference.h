@@ -75,18 +75,18 @@ int FieldIndex(Node n, int x, int y) {
   return n.i + x * (n.j + y * diamond::Index(n.xyz));
 }
 
-// Defines a referenece simulation.
+// Defines a reference simulation.
 template <typename T> struct SimParams {
   SimParams(int x, int y, int z, T *abs, T *mat, ZCoeff<T> *zcoeff, T *wf0,
-            T *wf1, T hmat, Node srcnode)
+            T *wf1, T dt, Node srcnode)
       : x(x), y(y), z(z), abs(abs), mat(mat), zcoeff(zcoeff), wf0(wf0),
-        wf1(wf1), hmat(hmat), srcnode(srcnode) {}
+        wf1(wf1), dt(dt), srcnode(srcnode) {}
 
   const int x, y, z;
   T *abs, *mat;      // Fields.
   ZCoeff<T> *zcoeff; // z-coefficients.
   T *wf0, *wf1;      // Vectors.
-  const T hmat;      // Constants.
+  const T dt;        // Constants.
   Node srcnode;
 };
 
@@ -139,6 +139,15 @@ template <typename T> T Src(int s, SimParams<T> sp) {
   return sp.wf0[s] + sp.wf1[s];
 }
 
+template <typename T> T AbsCoeff(T abs, T dt) {
+  return ((1 / dt) - (abs / 2)) / ((1 / dt) + (abs / 2));
+}
+
+template <typename T> T MatCoeff(T mat, T abs, T dt) {
+  // return mat;
+  return mat / ((1 / dt) + (abs / 2));
+}
+
 // Computes the value of the node `n0` at step `s`.
 template <typename T>
 T Get(Node n0, int s, NodeType type, SimParams<T> sp, Cache<T> &cache) {
@@ -152,8 +161,12 @@ T Get(Node n0, int s, NodeType type, SimParams<T> sp, Cache<T> &cache) {
     return cache.find(simnode)->second;
 
   } else if (type == FIELD) { // Compute field node.
-    T abs = n.ehc == H ? One<T>() : sp.abs[FieldIndex(n, sp.x, sp.y)];
-    T mat = n.ehc == H ? -sp.hmat : sp.mat[FieldIndex(n, sp.x, sp.y, sp.z)];
+    // TODO: Need to modify ``abs`` and ``mat`` to do the conversion thing.
+    T abs = n.ehc == H ? One<T>()
+                       : AbsCoeff(sp.abs[FieldIndex(n, sp.x, sp.y)], sp.dt);
+    T mat = n.ehc == H ? -sp.dt
+                       : MatCoeff(sp.mat[FieldIndex(n, sp.x, sp.y, sp.z)],
+                                  sp.abs[FieldIndex(n, sp.x, sp.y)], sp.dt);
     T value = abs * Get<T>(n, s - 1, FIELD, sp, cache) +
               mat * Curl<T>(n, s, FIELD, sp, cache) +
               (n == sp.srcnode ? Src<T>(s, sp) : Zero<T>());

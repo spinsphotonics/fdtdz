@@ -235,6 +235,14 @@ __dhce__ bool IsDiamondCompletelyInDomain(XY pos, XY domain) {
          pos.y < domain.y - (diamond::N / 2);
 }
 
+// TODO: Document and test.
+__dhce__ bool IsDiamondCompletelyInXY(XY pos, int x0, int x1, int y0, int y1) {
+  return pos.x >= x0 + (diamond::N / 2) &&      //
+         pos.x < x1 - ((diamond::N / 2) - 1) && //
+         pos.y >= y0 + (diamond::N / 2) &&      //
+         pos.y < y1 - (diamond::N / 2);
+}
+
 // range-based for loop
 //
 // So that we can do something like

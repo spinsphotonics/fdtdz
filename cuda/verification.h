@@ -9,6 +9,7 @@
 #include "field.h"
 #include "kernel.h"
 #include "kernel_precompiled.h"
+#include "reference.h"
 #include "slice.h"
 #include "testutils.h"
 
@@ -22,13 +23,23 @@ using defs::XY;
 using defs::Zero;
 using diamond::E;
 using diamond::H;
+using diamond::N;
 using diamond::Node;
 using diamond::Nz;
 using diamond::Xyz;
 
-template <typename T, typename T1> void MatCopy(T1 *src, T1 *dst, RunShape rs) {
-  for (int i = 0; i < cbuf::ExternalElems<T>(rs.domain, rs.pml.n); ++i)
-    dst[i] = src[i];
+template <typename T, typename T1>
+void MatCopy(T1 *src, T1 *dst, RunShape rs, int refxx, int refyy, int refzz) {
+  for (int i = rs.sub.x0; i < rs.sub.x1; ++i)
+    for (int j = rs.sub.y0; j < rs.sub.y1; ++j)
+      for (int k = rs.sub.z0; k < rs.sub.z1; ++k)
+        for (Xyz xyz : diamond::AllXyz) {
+          Node refnode(i, j, k, diamond::C, xyz);
+          Node subnode(i - rs.sub.x0, j - rs.sub.y0, k - rs.sub.z0, diamond::C,
+                       xyz);
+          dst[cbuf::ExternalIndex(refnode, rs.sub)] =
+              src[reference::FieldIndex(refnode, refxx, refyy, refzz)];
+        }
 }
 
 template <typename T, typename T1>
@@ -94,11 +105,11 @@ void RunKernel(RunShape rs, T1 *outptr, reference::SimParams<T1> sp, int nlo,
 
   // void *kernel = (void *)kernel::SimulationKernel<T, T1, Npml>;
 
-  kernel::KernelAlloc<T, T1> alloc(rs, /*hmat=*/sp.hmat);
+  kernel::KernelAlloc<T, T1> alloc(rs, /*dt=*/sp.dt);
   kernel::KernelArgs<T, T1> args = alloc.Args();
 
   // Convert inputs.
-  MatCopy<T, T1>(sp.mat, args.inputs.cbuffer, rs);
+  MatCopy<T, T1>(sp.mat, args.inputs.cbuffer, rs, sp.x, sp.y, sp.z);
   ZCoeffCopy<T, T1>(sp.zcoeff, args.inputs.zcoeff, rs);
   AbsLayerCopy<T1>(sp.abs, args.inputs.abslayer, rs);
   SrcLayerInit<T, T1>(args.inputs.srclayer, sp.srcnode, rs);
@@ -114,9 +125,18 @@ void RunKernel(RunShape rs, T1 *outptr, reference::SimParams<T1> sp, int nlo,
   cudaDeviceSynchronize(); // TODO: Better error checking.
 
   // Copy output.
-  for (int i = 0; i < field::ExternalElems<T>(rs.domain, /*nout=*/1, rs.pml.n);
-       ++i)
-    outptr[i] = args.output[i];
+  int sxx = rs.sub.x1 - rs.sub.x0;
+  int syy = rs.sub.y1 - rs.sub.y0;
+  int szz = rs.sub.z1 - rs.sub.z0;
+  for (int i = 0; i < sxx; ++i)
+    for (int j = 0; j < syy; ++j)
+      for (int k = 0; k < szz; ++k)
+        for (Xyz xyz : diamond::AllXyz) {
+          Node n(i, j, k, E, xyz);
+          outptr[reference::FieldIndex(n, sxx, syy, szz)] =
+              args.output[field::ExtNodeIndex(n.dI(N).dJ(N), /*outindex=*/0,
+                                              rs.sub)];
+        }
 }
 
 } // namespace verification

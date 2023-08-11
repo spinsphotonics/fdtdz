@@ -54,7 +54,7 @@ TEST(Reference, BasicStencil) {
   int nelems = FieldElems(xx, yy, zz);
   Node n(2, 5, 6, E, Z);
 
-  SimAlloc<int> alloc(xx, yy, zz, tt, /*mat0=*/1, /*srcnode=*/n);
+  SimAlloc<int> alloc(xx, yy, zz, tt, /*dt=*/1, /*srcnode=*/n);
   SimParams<int> sp = alloc.Params();
 
   // sp.src0[FieldIndex(n, sp.x, sp.y)] = 1;
@@ -92,7 +92,7 @@ TEST(Reference, BasicStencilWithModifications) {
   int nelems = FieldElems(xx, yy, zz);
   Node n(2, 5, 6, E, Z);
 
-  SimAlloc<int> alloc(xx, yy, zz, tt, /*mat0=*/1, /*srcnode=*/n);
+  SimAlloc<int> alloc(xx, yy, zz, tt, /*dt=*/1, /*srcnode=*/n);
   SimParams<int> sp = alloc.Params();
 
   // Use the other source
@@ -100,7 +100,7 @@ TEST(Reference, BasicStencilWithModifications) {
 
   // Modify `mat` and `abs`.
   sp.mat[FieldIndex(n.AsEx(), sp.x, sp.y, sp.z)] = 0;
-  sp.abs[FieldIndex(n, sp.x, sp.y)] = 2;
+  sp.abs[FieldIndex(n, sp.x, sp.y)] = -4;
   sp.zcoeff[n.k].edz = 2;
 
   Cache<int> cache;
@@ -120,7 +120,7 @@ TEST(Reference, BasicStencilWithModifications) {
   EXPECT_EQ(Get(n.AsEy().dJ(-1), 1, FIELD, sp, cache), -2);
   EXPECT_EQ(Get(n.AsEy().dJ(-1).dK(+1), 1, FIELD, sp, cache), 1);
 
-  EXPECT_EQ(Get(n, 1, FIELD, sp, cache), -2);
+  EXPECT_EQ(Get(n, 1, FIELD, sp, cache), 1);
   EXPECT_EQ(Get(n.dI(+1), 1, FIELD, sp, cache), 1);
   EXPECT_EQ(Get(n.dI(-1), 1, FIELD, sp, cache), 1);
   EXPECT_EQ(Get(n.dJ(+1), 1, FIELD, sp, cache), 1);
@@ -135,7 +135,7 @@ TEST(Reference, BasicStencilWithPml) {
   int nelems = FieldElems(xx, yy, zz);
   Node n(2, 5, 6, E, Z);
 
-  SimAlloc<int> alloc(xx, yy, zz, tt, /*mat0=*/1, /*srcnode=*/n);
+  SimAlloc<int> alloc(xx, yy, zz, tt, /*dt=*/1, /*srcnode=*/n);
   SimParams<int> sp = alloc.Params();
 
   // Use the other source
@@ -178,10 +178,10 @@ TEST(Reference, PmlAbsorption) {
   Node n(4, 4, 4, E, Y);
 
   // NOTE: `0.577` satisfies Courant condition.
-  SimAlloc<float> alloc(xx, yy, zz, tt, /*mat0=*/0.577f, /*srcnode=*/n);
+  SimAlloc<float> alloc(xx, yy, zz, tt, /*dt=*/0.577f, /*srcnode=*/n);
   SimParams<float> sp = alloc.Params();
 
-  Fill(1.0f, sp.abs, nelems);
+  Fill(0.0f, sp.abs, nelems);
   Fill(0.577f, sp.mat, nelems);
   Fill(ZCoeff<float>{1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f}, sp.zcoeff, zz);
 

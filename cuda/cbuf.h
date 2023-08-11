@@ -6,6 +6,7 @@
 #include "buffer_ops.h"
 #include "defs.h"
 #include "diamond.h"
+#include "slice.h"
 
 namespace cbuf {
 
@@ -28,13 +29,19 @@ using diamond::Y;
 using diamond::Z;
 
 // External buffer does not hold c-values for auxiliary threads.
-template <typename T> __dhce__ int ExternalElems(XY domain, int npml) {
-  return domain.x * domain.y * ExtZz<T>(npml) * diamond::kNumXyz;
+__dhce__ int ExternalElems(RunShape::Vol sub) {
+  return (sub.x1 - sub.x0) * (sub.y1 - sub.y0) * (sub.z1 - sub.z0) *
+         diamond::kNumXyz;
 }
 
-template <typename T> __dhce__ int ExternalIndex(Node n, XY domain, int npml) {
-  return n.k + ExtZz<T>(npml) *
-                   (n.j + domain.y * (n.i + domain.x * diamond::Index(n.xyz)));
+__dhce__ int ExternalIndex(Node n, RunShape::Vol sub) {
+  int i = n.i - sub.x0;
+  int j = n.j - sub.y0;
+  int k = n.k - sub.z0;
+  int xx = sub.x1 - sub.x0;
+  int yy = sub.y1 - sub.y0;
+  int zz = sub.z1 - sub.z0;
+  return k + zz * (j + yy * (i + xx * diamond::Index(n.xyz)));
 }
 
 __dhce__ int GlobalElems(XY domain) {
@@ -56,31 +63,75 @@ __dhce__ int GlobalIndex(Node n, XY domain) {
   }
 }
 
+__dhce__ int ClipToRange(int val, int lo, int hi) {
+  if (val < lo)
+    return lo;
+  else if (val >= hi)
+    return hi - 1;
+  else
+    return val;
+}
+
+__dhce__ Node NearestNode(Node n, RunShape::Vol sub) {
+  return Node(ClipToRange(n.i, sub.x0, sub.x1), //
+              ClipToRange(n.j, sub.y0, sub.y1), //
+              ClipToRange(n.k, sub.z0, sub.z1), //
+              n.ehc, n.xyz);
+}
+
+__dhce__ bool IsInside(Node n, RunShape::Vol v) {
+  return n.i >= v.x0 && n.i < v.x1 && //
+         n.j >= v.y0 && n.j < v.y1 && //
+         n.k >= v.z0 && n.k < v.z1;
+}
+
+template <typename T>
+__dh__ T GlobalValue(T *ptr, Node externalnode, bool isaux, RunShape::Vol sub,
+                     RunShape::Vol vol) {
+  if (isaux) {
+    // Default value of `1` is needed to avoid branching in the update code when
+    // dealing with auxiliary thread.
+    return defs::One<T>();
+  } else if (!IsInside(externalnode, vol)) { // Outside of volume.
+    return defs::Zero<T>();
+  } else if (IsInside(externalnode, sub)) { // Inside subvolume.
+    return ptr[ExternalIndex(externalnode, sub)];
+  } else { // Need to infer.
+    Node nearestnode = NearestNode(externalnode, sub);
+    return ptr[ExternalIndex(nearestnode, sub)];
+  }
+}
+
 // Write the external node `n` into the internal buffer.
 template <typename T>
 __dh__ void WriteGlobal(T *src, T *dst, Node n, XY domain, int threadpos,
-                        int npml, int zshift, bool isaux) {
+                        int npml, int zshift, bool isaux, RunShape::Vol sub,
+                        RunShape::Vol vol, T *abs, T dt) {
   Node externalnode = n.K(ExtZIndex<T>(n.k, threadpos, npml, zshift));
   Node globalnode = n.dK(Nz * threadpos);
+  // Apply the absorption mask.
+  T absvalue = abs[slice::ZMask<T>::ExternalIndex(XY(n.i, n.j), n.xyz, domain)];
+  T denom = (1 / dt) + (absvalue / 2);
   dst[GlobalIndex(globalnode, domain)] =
-      isaux ? defs::One<T>()
-            : src[ExternalIndex<T>(externalnode, domain, npml)];
+      GlobalValue(src, externalnode, isaux, sub, vol) / denom;
 }
 
 #ifndef __OMIT_HALF2__
 // Fill the internal global c-buffer with values from the external buffer.
 __dh__ void WriteGlobal(float *src, half2 *dst, Node n, XY domain,
-                        int threadpos, int npml, int zshift, bool isaux) {
+                        int threadpos, int npml, int zshift, bool isaux,
+                        RunShape::Vol sub, RunShape::Vol vol, float *abs,
+                        float dt) {
   Node enodelo = n.K(ExtZIndex<half2>(n.k, threadpos, npml, zshift));
   Node enodehi = n.K(ExtZIndex<half2>(n.k + Nz, threadpos, npml, zshift));
   Node globalnode = n.dK(Nz * threadpos);
+  // Apply the absorption mask.
+  float absvalue =
+      abs[slice::ZMask<float>::ExternalIndex(XY(n.i, n.j), n.xyz, domain)];
+  float denom = (1 / dt) + (absvalue / 2);
   dst[GlobalIndex(globalnode, domain)] =
-      isaux
-          ? defs::One<half2>() // Default value of `1` is needed to avoid
-                               // branching in the update code when dealing with
-                               // auxiliary thread.
-          : __floats2half2_rn(src[ExternalIndex<half2>(enodelo, domain, npml)],
-                              src[ExternalIndex<half2>(enodehi, domain, npml)]);
+      __floats2half2_rn(GlobalValue(src, enodelo, isaux, sub, vol) / denom,
+                        GlobalValue(src, enodehi, isaux, sub, vol) / denom);
 }
 #endif
 
@@ -231,7 +282,7 @@ __dhce__ void StoreShared(Cell<T> &cell, T *ptr, int threadpos, UV warppos,
 
 template <typename T, typename T1>
 __dh__ void Convert(T1 *src, T *dst, RunShape rs, int zshift, int threadpos,
-                    UV warppos, UV blockpos) {
+                    UV warppos, UV blockpos, T1 *abs, T1 dt) {
   // NOTE: We abuse the `UV` notation to iterate in (x, y) coordinates.
   UV init = warppos + rs.block * blockpos;
   UV stride = rs.block * rs.grid;
@@ -241,7 +292,8 @@ __dh__ void Convert(T1 *src, T *dst, RunShape rs, int zshift, int threadpos,
         for (diamond::Xyz xyz : diamond::AllXyz)
           cbuf::WriteGlobal(src, dst, diamond::Node(i, j, k, diamond::E, xyz),
                             rs.domain, threadpos, rs.pml.n, zshift,
-                            defs::IsAux(threadpos, rs.pml.n));
+                            defs::IsAux(threadpos, rs.pml.n), rs.sub, rs.vol,
+                            abs, dt);
 }
 
 } // namespace cbuf
