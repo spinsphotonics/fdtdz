@@ -231,7 +231,6 @@ def test_large_sim(
       pml_widths,
       output_steps,
       use_reduced_precision,
-      launch_params=jax.devices()[0].device_kind,
       offset=(abs_width, abs_width, zz // 2 - zz0 // 2),
   )
   assert jnp.sum(jnp.abs(fields)) > 0

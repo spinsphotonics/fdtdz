@@ -29,6 +29,10 @@ def _preset_launch_params(device_kind):
     return ((2, 4), (6, 6), 2, (7, 5))
   elif device_kind == "Tesla T4":
     return ((2, 4), (8, 5), 2, (7, 5))
+  elif "V100" in device_kind:
+    return ((2, 4), (10, 8), 2, (7, 0))
+  elif "A100" in device_kind:
+    return ((2, 4), (12, 9), 4, (8, 0))
   else:
     raise ValueError(
         f"No preset launch parameters available for \"{device_kind}\".")
@@ -107,7 +111,7 @@ def fdtdz(
     pml_widths,
     output_steps,
     use_reduced_precision,
-    launch_params,
+    launch_params=None,
     offset=(0, 0, 0),
 ):
   """Execute a FDTD simulation.
@@ -244,6 +248,8 @@ def fdtdz(
       allowed values are ``(3, 7)``, ``(6, 0)``, ``(7, 0)``, ``(7, 5)``, and
       ``(8, 0)``. Recommended to use the latest compute capability kernel
       possible that does not exceed the compute capability of the device.
+      Use ``None`` to try to use a default value based on
+      ``jax.devices()[0].device_kind``.
     offset: ``(x0, y0, z0)`` integers denoting the placement of ``epsilon``
       as well as the desired output subvolume in the simulation domain.
 
@@ -254,6 +260,9 @@ def fdtdz(
     ``Ez`` node (in that order) at the update steps given by ``output_steps``.
 
   """
+  if launch_params is None:
+    launch_params = _preset_launch_params(jax.devices()[0].device_kind)
+
   total_pml_width = pml_widths[0] + pml_widths[1]
 
   if not (total_pml_width % 4 == 0 and
