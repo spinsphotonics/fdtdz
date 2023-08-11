@@ -5,7 +5,7 @@
 * **scalable**: easily runs simulations on hundreds of nodes and beyond,
 * **free**: open-source, no license-fees!
 
-Give it a test drive [![in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/jlu-spins/0f3c5459bd4386150ae30b17f7c6a5e3/welcome-to-fdtd-z.ipynb),
+Give it a test drive [![in Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/gist/jlu-spins/e2c5ac6892e2e2661ea14ce7f352c357/welcome-to-fdtd-z.ipynb),
 join the chat [![on https://gitter.im/fdtdz/community](https://badges.gitter.im/fdtdz/community.svg)](https://app.gitter.im/#/room/#fdtdz:gitter.im), and read the [whitepaper](paper/paper.pdf).
 
 ### API
