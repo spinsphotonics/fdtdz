@@ -578,8 +578,6 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
       kwargs["outnum"],
       kwargs["dirname"],
   )
-  print(
-      f"{kwargs['subvolume_offset']} {kwargs['subvolume_size']} {kwargs['volume_size']}")
 
   (_, xx, yy, zz) = mlir.ir.RankedTensorType(cbuffer.type).shape
   shapes = _internal_shapes(**kwargs)

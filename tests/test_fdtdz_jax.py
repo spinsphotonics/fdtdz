@@ -193,8 +193,10 @@ def test_point_source(xx, yy, tt, dt, src_type, src_wavelength,
      (1300, 1300, 10, 1),
      (1300, 1300, 10, 6),
      ])
-def test_large_sim(xx0, yy0, zz0, num_output, dt=0.5, tt=1000, pml_widths=(8, 8), use_reduced_precision=True,
-                   abs_width=50, abs_smoothness=1e-2, src_wavelength=10.0, src_ramp=4):
+def test_large_sim(
+        xx0, yy0, zz0, num_output, dt=0.5, tt=1000, pml_widths=(8, 8),
+        use_reduced_precision=True, abs_width=50, abs_smoothness=1e-2,
+        src_wavelength=10.0, src_ramp=4):
   """Run a large simulation using the subvolume feature."""
   epsilon = jnp.ones((3, xx0, yy0, zz0))
 
