@@ -58,8 +58,12 @@ void TestLayer(XY domain) {
 
 TEST(Slice, Layer) { TestLayer(/*domain=*/XY(4, 4)); }
 
+// Only returns `+2`, `0`, `-4`, or `-6` because of how
+// `ZMask::ConvertToCoeff()` works.
 int ZMaskNodeHash(XY pos, Xyz xyz) {
-  return diamond::Index(xyz) + 100 * (pos.y + 100 * pos.x);
+  int hash = diamond::Index(xyz) + 100 * (pos.y + 100 * pos.x);
+  hash = 2 * ((hash * 37) % 4);
+  return hash < 4 ? hash : -hash;
 }
 
 void TestZMask(XY domain) {
@@ -100,7 +104,9 @@ void TestZMask(XY domain) {
               //     << " at (pos, node) = (" << XY(x, y) << ", "
               //     << Node(i, j, 0, E, xyz) << ")\n";
               EXPECT_EQ(globalarr[ZMask<int>::GlobalIndex(cnt, pos, domain)],
-                        isinside ? ZMaskNodeHash(p, xyz) : 0)
+                        isinside ? ZMask<int>::ConvertToCoeff(
+                                       ZMaskNodeHash(p, xyz), dt)
+                                 : 0)
                   << "(pos, node) = (" << pos << ", " << n << ")\n";
               ++cnt;
             }
