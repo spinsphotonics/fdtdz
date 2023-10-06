@@ -102,7 +102,7 @@ setup(
     packages=find_packages(where="src"),
     package_dir={"": "src"},
     include_package_data=True,
-    install_requires=["jax", "jaxlib"],
+    install_requires=["jax>=0.4.16", "jaxlib"],
     setup_requires=["setuptools_scm"],
     use_scm_version=True,
     extras_require={"test": "pytest"},
