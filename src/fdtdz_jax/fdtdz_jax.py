@@ -593,7 +593,7 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
 
   out = custom_call(
       "kernel_f16" if kwargs["use_reduced_precision"] else "kernel_f32",
-      out_types=[
+      result_types=[
           mlir.ir.RankedTensorType.get(shapes["buffer"],
                                        mlir.ir.F32Type.get()),
           mlir.ir.RankedTensorType.get(shapes["cbuffer"],
