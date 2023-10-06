@@ -614,7 +614,7 @@ def _fdtdz_lowering(ctx, cbuffer, abslayer, srclayer, waveform, zcoeff,
       result_layouts=_default_layouts(shapes["buffer"], shapes["cbuffer"],
                                       shapes["mask"], shapes["src"],
                                       shapes["output"]),
-      backend_config=opaque)
+      backend_config=opaque).results
 
   return out
 
