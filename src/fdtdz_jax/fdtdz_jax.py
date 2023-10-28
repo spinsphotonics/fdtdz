@@ -422,10 +422,14 @@ def fdtdz(
   cbuffer = 1 / epsilon
 
   # PML coefficients.
-  pml_b = jnp.exp(-((pml_sigma / pml_kappa) + pml_alpha) * dt)
   pml_z = 1 / pml_kappa
+  pml_b = jnp.where(pml_z == 0,
+                    0,
+                    jnp.exp(-((pml_sigma / pml_kappa) + pml_alpha) * dt))
   # Avoid division-by-zero.
-  pml_a_denom = pml_sigma * pml_kappa + pml_alpha * pml_kappa**2
+  pml_a_denom = jnp.where(pml_z == 0,
+                          0,
+                          pml_sigma * pml_kappa + pml_alpha * pml_kappa**2)
   pml_a = ((pml_b - 1) * jnp.where(pml_a_denom == 0, 1, pml_sigma) /
            jnp.where(pml_a_denom == 0, pml_kappa, pml_a_denom))
 
